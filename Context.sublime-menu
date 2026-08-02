@@ -1,0 +1,261 @@
+[
+    { "caption": "-", "id": "submerge-separator" },
+    {
+        "caption": "SubMerge",
+        "id": "submerge",
+        "children":
+        [
+            {
+                "caption": "Compare Selected Tabs",
+                "command": "submerge_compare_selected_tabs"
+            },
+            {
+                "caption": "Compare with Marked Tab(s)",
+                "command": "submerge_compare_with_marked"
+            },
+            {
+                "caption": "Add This Tab to Comparison",
+                "command": "submerge_mark_for_compare",
+                "args": { "add": true }
+            },
+            {
+                "caption": "Mark This Tab for Comparison",
+                "command": "submerge_mark_for_compare"
+            },
+            {
+                "caption": "Clear Marks",
+                "command": "submerge_clear_marks"
+            },
+            {
+                "caption": "Compare Open Tabs\u2026",
+                "command": "submerge_compare_open_tabs"
+            },
+            {
+                "caption": "Compare with File\u2026",
+                "command": "submerge_compare_with_file"
+            },
+            { "caption": "-" },
+            {
+                "caption": "Next Difference",
+                "command": "submerge_next_difference"
+            },
+            {
+                "caption": "Previous Difference",
+                "command": "submerge_previous_difference"
+            },
+            {
+                "caption": "Go To Moved Line's Partner",
+                "command": "submerge_goto_moved_partner"
+            },
+            { "caption": "-" },
+            {
+                "caption": "Copy Difference to Right",
+                "command": "submerge_copy_difference",
+                "args": { "to": "right" }
+            },
+            {
+                "caption": "Copy Difference to Left",
+                "command": "submerge_copy_difference",
+                "args": { "to": "left" }
+            },
+            {
+                "caption": "Copy Difference To\u2026",
+                "command": "submerge_copy_difference",
+                "args": { "to": "ask" }
+            },
+            { "caption": "-" },
+            {
+                "caption": "Open Selected Row",
+                "command": "submerge_folder_open_row"
+            },
+            {
+                "caption": "Reload Compared Folders",
+                "command": "submerge_folder_rescan"
+            },
+            {
+                "caption": "Show Identical Files",
+                "command": "submerge_folder_toggle_identical",
+                "checkbox": true
+            },
+            {
+                "caption": "File Metadata Comparison\u2026",
+                "command": "submerge_metadata_report"
+            },
+            { "caption": "-" },
+            {
+                "caption": "Refresh Comparison",
+                "command": "submerge_refresh"
+            },
+            {
+                "caption": "Close Comparison",
+                "command": "submerge_end_comparison"
+            },
+            { "caption": "-" },
+            {
+                "caption": "Highlighting",
+                "children":
+                [
+                    {
+                        "caption": "Color Preset (Folder/Metadata/Gaps)",
+                        "children":
+                        [
+                            {
+                                "caption": "Vivid (default)",
+                                "command": "submerge_set_option",
+                                "args": { "option": "color_preset", "value": "vivid" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "Classic",
+                                "command": "submerge_set_option",
+                                "args": { "option": "color_preset", "value": "classic" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "High Contrast",
+                                "command": "submerge_set_option",
+                                "args": { "option": "color_preset", "value": "high_contrast" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "Pastel",
+                                "command": "submerge_set_option",
+                                "args": { "option": "color_preset", "value": "pastel" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "Colorblind Safe",
+                                "command": "submerge_set_option",
+                                "args": { "option": "color_preset", "value": "colorblind_safe" },
+                                "checkbox": true
+                            }
+                        ]
+                    },
+                    {
+                        "caption": "Highlight Style",
+                        "children":
+                        [
+                            {
+                                "caption": "Background Fill (default)",
+                                "command": "submerge_set_option",
+                                "args": { "option": "highlight_style", "value": "background" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "Underline",
+                                "command": "submerge_set_option",
+                                "args": { "option": "highlight_style", "value": "underline" },
+                                "checkbox": true
+                            },
+                            {
+                                "caption": "Squiggly Underline",
+                                "command": "submerge_set_option",
+                                "args": { "option": "highlight_style", "value": "squiggly" },
+                                "checkbox": true
+                            }
+                        ]
+                    },
+                    {
+                        "caption": "Graduated Inline Highlight Intensity",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "graduated_inline_highlight" },
+                        "checkbox": true
+                    }
+                ]
+            },
+            { "caption": "-" },
+            {
+                "caption": "Comparison Options",
+                "children":
+                [
+                    {
+                        "caption": "Ignore Leading/Trailing Whitespace",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "ignore_whitespace" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Ignore All Whitespace",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "ignore_all_whitespace" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Ignore Case",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "ignore_case" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Ignore Blank Lines",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "ignore_blank_lines" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Ignore End-of-Line Differences (CRLF vs LF)",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "ignore_line_endings" },
+                        "checkbox": true
+                    },
+                    { "caption": "-" },
+                    {
+                        "caption": "Detect Moved Lines",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "detect_moved_lines" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Compare File Metadata",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "compare_metadata" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Show CSV/TSV Files as Tables",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "csv_table_view" },
+                        "checkbox": true
+                    },
+                    { "caption": "-" },
+                    {
+                        "caption": "Synchronized Scrolling",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "sync_scroll" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Show Alignment Gaps",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "show_gaps" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Live Re-Diff While Typing",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "live_diff" },
+                        "checkbox": true
+                    },
+                    {
+                        "caption": "Open Comparisons in a New Window",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "compare_in_new_window" },
+                        "checkbox": true
+                    },
+                    { "caption": "-" },
+                    {
+                        "caption": "Folder Compare: Show Identical Files",
+                        "command": "submerge_toggle_option",
+                        "args": { "option": "folder_show_identical" },
+                        "checkbox": true
+                    }
+                ]
+            },
+            { "caption": "-" },
+            {
+                "caption": "Settings",
+                "command": "submerge_open_settings"
+            }
+        ]
+    }
+]

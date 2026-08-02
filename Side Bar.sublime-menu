@@ -1,0 +1,32 @@
+[
+    { "caption": "-", "id": "submerge-separator" },
+    {
+        "caption": "SubMerge: Compare Selected Files",
+        "command": "submerge_compare_files",
+        "args": { "files": [], "dirs": [], "paths": [] }
+    },
+    {
+        "caption": "SubMerge: Compare Selected Folders",
+        "command": "submerge_compare_folders",
+        "args": { "files": [], "dirs": [], "paths": [] }
+    },
+    {
+        "caption": "SubMerge: Compare with Marked",
+        "command": "submerge_compare_with_marked_path",
+        "args": { "files": [], "dirs": [], "paths": [] }
+    },
+    {
+        "caption": "SubMerge: Add to Comparison",
+        "command": "submerge_mark_path_for_compare",
+        "args": { "add": true, "files": [], "dirs": [], "paths": [] }
+    },
+    {
+        "caption": "SubMerge: Mark for Comparison",
+        "command": "submerge_mark_path_for_compare",
+        "args": { "files": [], "dirs": [], "paths": [] }
+    },
+    {
+        "caption": "SubMerge: Clear Marks",
+        "command": "submerge_clear_marks"
+    }
+]

@@ -1,0 +1,67 @@
+SubMerge 1.0.0
+==============
+
+First public release.
+
+Remember to quit Sublime Text completely and restart after installing or
+updating — closing the window is not enough.
+
+
+WHAT'S IN IT
+------------
+
+Side-by-side comparison
+  * Compare 2 or 3 files at once, each keeping its own syntax highlighting.
+  * A different color for each kind of difference: added lines, changed
+    lines, the changed words inside a line, and moved lines.
+  * Only the part of a line that actually differs is highlighted, so a
+    one-character change doesn't light up the whole line.
+  * Blank "gap" blocks keep matching lines lined up across panes, without
+    altering your files.
+  * Synchronized scrolling, and difference markers in the minimap.
+  * Moved-line detection: a line that simply moved is shown as moved rather
+    than as a delete plus an add. Ctrl+Alt+J jumps to its other half.
+
+Merging
+  * Copy the difference under the cursor to the other pane, or copy every
+    difference at once, in either direction.
+  * With three panes, choose which pane to copy into.
+
+Folder comparison
+  * Compare 2 or 3 folders, recursively, in a results tab.
+  * Markers show identical, differing, unique, and metadata-only entries.
+  * Press Enter on a row to open that file or sub-folder comparison.
+  * Optionally hide identical files.
+
+Extras
+  * File metadata comparison: size, dates, permissions, line endings,
+    encoding, byte order mark, and more.
+  * CSV/TSV table view: delimited files can be rendered as aligned,
+    wrapped columns before comparing.
+  * Options to ignore whitespace, case, blank lines, and end-of-line
+    differences between Windows and Mac/Linux files.
+  * Highlight styles: background fill, underline, or squiggly underline.
+  * Optionally open comparisons in a separate window.
+
+Works on Windows, macOS and Linux, on Sublime Text 4.
+
+
+DEFAULTS WORTH KNOWING
+----------------------
+
+"Ignore End-of-Line Differences" is ON by default. Without it, comparing a
+Windows file against a Mac/Linux copy of the same text marks every line as
+different. Turn it off (Tools > SubMerge > Comparison Options) when the
+line-ending style is what you're actually checking.
+
+"Compare File Metadata" is OFF by default, because it makes folder
+comparisons noticeably slower on large trees. Turn it on when you care
+about dates, permissions or encoding.
+
+
+THE USER GUIDE
+--------------
+
+  Tools > SubMerge > User Guide
+
+Opens the full guide in your web browser.

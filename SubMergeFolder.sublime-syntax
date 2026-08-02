@@ -1,0 +1,57 @@
+%YAML 1.2
+---
+# SubMerge folder comparison results.
+# Colors for these scopes are generated into
+# Packages/User/SubMerge.hidden-color-scheme from the "colors" setting.
+name: SubMerge Folder Comparison
+scope: text.submerge.folder
+hidden: true
+file_extensions: []
+
+contexts:
+  main:
+    # Header block
+    - match: ^SubMerge.*$
+      scope: markup.heading.submerge
+    - match: ^\s{2}[ABC]:\s.*$
+      scope: comment.line.submerge.root
+    - match: ^\s{2}(?:\[=\] identical|Press Enter|Identical files are hidden).*$
+      scope: comment.line.submerge.legend
+    - match: ^\s{2}\d+ folder\(s\).*$
+      scope: comment.line.submerge.summary
+
+    # Directory rows (name ends with a slash)
+    - match: ^(\s*)(\[[=~!+]\])(\s+)([A-C-]+)(\s+)(\S.*/)(.*)$
+      captures:
+        2: punctuation.definition.submerge.marker
+        4: constant.numeric.submerge.presence
+        6: submerge.folder.directory
+        7: submerge.folder.metadata
+
+    # Identical files
+    - match: ^(\s*)(\[=\])(\s+)([A-C-]+)(\s+)(.*)$
+      captures:
+        2: punctuation.definition.submerge.marker
+        4: constant.numeric.submerge.presence
+        6: submerge.folder.identical
+
+    # Content identical, metadata differs
+    - match: ^(\s*)(\[~\])(\s+)([A-C-]+)(\s+)(.*)$
+      captures:
+        2: punctuation.definition.submerge.marker
+        4: constant.numeric.submerge.presence
+        6: submerge.folder.metadata
+
+    # Files that exist on both/all sides but whose content differs
+    - match: ^(\s*)(\[!\])(\s+)([A-C-]+)(\s+)(.*)$
+      captures:
+        2: punctuation.definition.submerge.marker
+        4: constant.numeric.submerge.presence
+        6: submerge.folder.different
+
+    # Files that exist only in some of the folders
+    - match: ^(\s*)(\[\+\])(\s+)([A-C-]+)(\s+)(.*)$
+      captures:
+        2: punctuation.definition.submerge.marker
+        4: constant.numeric.submerge.presence
+        6: submerge.folder.unique

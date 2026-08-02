@@ -1,0 +1,30 @@
+%YAML 1.2
+---
+# SubMerge metadata comparison report.
+name: SubMerge Metadata Comparison
+scope: text.submerge.metadata
+hidden: true
+file_extensions: []
+
+contexts:
+  main:
+    - match: ^SubMerge.*$
+      scope: markup.heading.submerge
+    - match: ^\s{2}[ABC]:\s.*$
+      scope: comment.line.submerge.root
+    - match: ^\s{2}(?:Content|Metadata):\s*IDENTICAL.*$
+      scope: submerge.folder.identical
+    - match: ^\s{2}(?:Content):\s*DIFFERENT.*$
+      scope: submerge.folder.different
+    - match: ^\s{2}(?:Metadata):\s*DIFFERENT.*$
+      scope: submerge.folder.metadata
+    - match: ^\s{2}!\s.*$
+      scope: submerge.folder.different
+    - match: ^\s{2}=\s.*$
+      scope: submerge.folder.identical
+    - match: ^\s{2}~\s.*$
+      scope: submerge.folder.metadata
+    - match: ^\s{4}-+$
+      scope: comment.line.submerge.rule
+    - match: ^\s{2}'!'.*$|^\s{2}Name, path.*$|^\s{2}count as.*$
+      scope: comment.line.submerge.note

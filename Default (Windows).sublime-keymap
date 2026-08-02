@@ -1,0 +1,86 @@
+[
+    // ---------------------------------------------------------------------
+    // SubMerge - default key bindings (Windows)
+    // macOS bindings live in "Default (OSX).sublime-keymap".
+    // ---------------------------------------------------------------------
+
+    // Start a comparison by picking 2-3 open tabs.
+    { "keys": ["ctrl+alt+d"], "command": "submerge_compare_open_tabs" },
+
+    // Compare the 2-3 tabs selected in the tab bar.
+    { "keys": ["ctrl+alt+shift+d"], "command": "submerge_compare_selected_tabs" },
+
+    // Mark / compare workflow (works from any tab).
+    { "keys": ["ctrl+alt+m"], "command": "submerge_mark_for_compare" },
+    { "keys": ["ctrl+alt+shift+m"], "command": "submerge_compare_with_marked" },
+
+    // Compare the current tab against a file chosen on disk.
+    { "keys": ["ctrl+alt+o"], "command": "submerge_compare_with_file" },
+
+    // Navigation inside an active comparison.
+    {
+        "keys": ["f7"], "command": "submerge_next_difference",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["shift+f7"], "command": "submerge_previous_difference",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["ctrl+alt+home"], "command": "submerge_first_difference",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["ctrl+alt+end"], "command": "submerge_last_difference",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+
+    {
+        "keys": ["ctrl+alt+j"], "command": "submerge_goto_moved_partner",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+
+    // File metadata comparison for the active comparison / marked tabs.
+    { "keys": ["ctrl+alt+i"], "command": "submerge_metadata_report" },
+
+    // Merging.
+    {
+        "keys": ["ctrl+alt+right"], "command": "submerge_copy_difference",
+        "args": { "to": "right" },
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["ctrl+alt+left"], "command": "submerge_copy_difference",
+        "args": { "to": "left" },
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["ctrl+alt+shift+right"], "command": "submerge_copy_all_differences",
+        "args": { "to": "right" },
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["ctrl+alt+shift+left"], "command": "submerge_copy_all_differences",
+        "args": { "to": "left" },
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+
+    // Session control.
+    { "keys": ["ctrl+alt+r"], "command": "submerge_refresh" },
+    { "keys": ["ctrl+alt+shift+w"], "command": "submerge_end_comparison" },
+
+    // Folder comparison results.
+    {
+        "keys": ["enter"], "command": "submerge_folder_open_row",
+        "context": [
+            { "key": "submerge_folder_view", "operand": true },
+            { "key": "auto_complete_visible", "operand": false },
+            { "key": "panel_has_focus", "operand": false }
+        ]
+    },
+    {
+        "keys": ["f5"], "command": "submerge_folder_rescan",
+        "args": { "group": -1, "index": -1 },
+        "context": [{ "key": "submerge_folder_view", "operand": true }]
+    }
+]

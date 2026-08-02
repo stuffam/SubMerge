@@ -1,0 +1,14 @@
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Build output — the packaged .sublime-package is a release artifact,
+# not source; rebuild it from the source files instead of tracking it.
+*.sublime-package
+
+# Editor/OS cruft
+*.swp
+Thumbs.db

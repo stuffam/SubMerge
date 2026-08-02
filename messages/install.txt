@@ -1,0 +1,72 @@
+SubMerge 1.0.0
+==============
+
+Thanks for installing SubMerge — file and folder comparison inside Sublime
+Text, in the spirit of WinMerge.
+
+
+IMPORTANT: RESTART SUBLIME TEXT
+-------------------------------
+
+Quit Sublime Text completely and start it again before using SubMerge.
+Closing the window is not enough:
+
+  macOS    Sublime Text > Quit Sublime Text  (Cmd+Q)
+  Windows  File > Exit
+  Linux    File > Exit
+
+Sublime does not always finish loading a newly installed package until it
+restarts, and SubMerge will tell you in the console if it detects a partial
+load.
+
+
+GETTING STARTED
+---------------
+
+The fastest way to compare two files that are already open:
+
+  1. Hold Ctrl (Cmd on macOS) and click the two tabs you want to compare,
+     so both are selected.
+  2. Right-click either tab and choose "SubMerge: Compare Selected Tabs".
+
+Or select two files in the sidebar, right-click, and choose
+"SubMerge: Compare Selected Files". Folders work the same way.
+
+Then:
+
+  F7 / Shift+F7        move to the next / previous difference
+  Ctrl+Alt+Right/Left  copy the difference under the cursor to the other pane
+                       (Cmd+Alt on macOS)
+
+
+THE FULL USER GUIDE
+-------------------
+
+  Tools > SubMerge > User Guide
+
+That opens an illustrated guide in your web browser, covering three-way
+comparison, folder comparison, CSV table view, file metadata comparison,
+what the colors mean, and troubleshooting.
+
+Everything SubMerge does is also on the Tools > SubMerge menu, and on the
+right-click menu in a tab, a file, or the sidebar.
+
+
+SETTINGS
+--------
+
+  Tools > SubMerge > Settings
+
+Two panes open: the documented defaults on the left, your own overrides on
+the right. Copy across only the lines you want to change.
+
+
+A NOTE ON COLORS
+----------------
+
+The side-by-side difference colors come from your active Sublime color
+scheme, so they will match whatever theme you use. If you want different
+diff colors, change your color scheme
+(Preferences > Select Color Scheme...). Folder-comparison and metadata
+colors are separately adjustable under
+Tools > SubMerge > Highlighting > Color Preset.

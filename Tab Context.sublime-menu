@@ -1,0 +1,47 @@
+[
+    { "caption": "-", "id": "submerge-separator" },
+    {
+        "caption": "SubMerge: Compare Selected Tabs",
+        "command": "submerge_compare_selected_tabs",
+        "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "SubMerge: Compare with Marked Tab(s)",
+        "command": "submerge_compare_with_marked",
+        "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "SubMerge: Add to Comparison",
+        "command": "submerge_mark_for_compare",
+        "args": { "group": -1, "index": -1, "add": true }
+    },
+    {
+        "caption": "SubMerge: Mark for Comparison",
+        "command": "submerge_mark_for_compare",
+        "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "SubMerge: Clear Marks",
+        "command": "submerge_clear_marks"
+    },
+    {
+        "caption": "SubMerge: Compare Open Tabs\u2026",
+        "command": "submerge_compare_open_tabs"
+    },
+    {
+        "caption": "SubMerge: Compare with File\u2026",
+        "command": "submerge_compare_with_file",
+        "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "SubMerge: Reload Compared Folders",
+        "command": "submerge_folder_rescan",
+        "args": { "group": -1, "index": -1 }
+    },
+    {
+        "caption": "SubMerge: Show Identical Files",
+        "command": "submerge_folder_toggle_identical",
+        "args": { "group": -1, "index": -1 },
+        "checkbox": true
+    }
+]
