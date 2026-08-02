@@ -424,6 +424,6 @@ the console (**View → Show Console**).
 ## Acknowledgments
 
 SubMerge was developed through an extensive collaborative process with
-[Claude], Anthropic's AI assistant, which helped design, debug across platforms,
+Claude, Anthropic's AI assistant, which helped design, debug across platforms,
 and refine the plugin's features and settings through repeated rounds of
 real-world testing and feedback.
