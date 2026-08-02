@@ -8,8 +8,8 @@ compares whole folders, so you can see at a glance which files match and which
 don't. If you have used WinMerge, Beyond Compare, or the "diff" view in a Git
 tool, this will feel familiar.
 
-NOTICE: This plugin was developed with the assistance of [Claude]
-(#https://www.anthropic.com/claude), Anthropic's AI assistant.
+NOTICE: This plugin was developed with the assistance of [Claude](https://www.anthropic.com/claude),
+Anthropic's AI assistant.
 
 ---
 
