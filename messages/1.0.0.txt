@@ -1,4 +1,4 @@
-SubMerge 1.0.0
+SubMerge v1.0.0
 ==============
 
 First public release.
