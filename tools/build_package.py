@@ -17,7 +17,9 @@ check below.
 """
 
 import argparse
+import json
 import os
+import re
 import sys
 import zipfile
 
@@ -66,6 +68,51 @@ REQUIRED_IN_ARCHIVE = [
 FORBIDDEN_SUFFIXES = (
     ".pyc", ".sublime-workspace", ".sublime-project", ".DS_Store",
 )
+
+
+def plugin_version():
+    """PLUGIN_VERSION from SubMerge.py, read without importing it.
+
+    Importing is not an option outside Sublime - SubMerge.py imports the
+    `sublime` module at the top - so the value is parsed out of the source.
+    """
+    path = os.path.join(REPO, "SubMerge.py")
+    with open(path, encoding="utf-8") as handle:
+        match = re.search(r'^PLUGIN_VERSION\s*=\s*"([^"]+)"', handle.read(),
+                          re.MULTILINE)
+    if not match:
+        raise SystemExit("build: no PLUGIN_VERSION found in SubMerge.py")
+    return match.group(1)
+
+
+def check_version(expected):
+    """Fail unless the release tag, PLUGIN_VERSION and messages.json agree.
+
+    These three drift silently: nothing in Sublime cross-checks them, so a
+    tag cut without bumping PLUGIN_VERSION ships a package that reports the
+    wrong version, and one without a messages.json entry shows the user no
+    upgrade note at all.  A release is the last place that can still be
+    caught cheaply.
+    """
+    expected = expected.lstrip("vV")
+    found = plugin_version()
+    if found != expected:
+        raise SystemExit(
+            "build: version mismatch - tag says %r, PLUGIN_VERSION in "
+            "SubMerge.py says %r. Bump one of them." % (expected, found))
+
+    with open(os.path.join(REPO, "messages.json"), encoding="utf-8") as handle:
+        messages = json.load(handle)
+    if expected not in messages:
+        raise SystemExit(
+            "build: messages.json has no entry for %r, so upgrading users "
+            "would see no release note. Add \"%s\": \"messages/%s.txt\"."
+            % (expected, expected, expected))
+    note = os.path.join(REPO, messages[expected])
+    if not os.path.isfile(note):
+        raise SystemExit("build: messages.json points at %r, which is missing"
+                         % messages[expected])
+    print("version %s (SubMerge.py, messages.json and tag agree)" % expected)
 
 
 def collect():
@@ -134,7 +181,14 @@ def build(output_dir):
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output-dir", default=os.path.join(REPO, "dist"))
+    parser.add_argument(
+        "--expect-version", default="", metavar="VERSION",
+        help="fail unless the tag, PLUGIN_VERSION and messages.json all "
+             "agree on this version (a leading 'v' is stripped). Empty means "
+             "no check, so CI can pass the tag name unconditionally.")
     args = parser.parse_args(argv)
+    if args.expect_version:
+        check_version(args.expect_version)
     build(args.output_dir)
     return 0
 

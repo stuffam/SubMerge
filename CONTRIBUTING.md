@@ -51,6 +51,36 @@ archive, and CI asserts that.
 To test a build, drop the file into `Installed Packages/` (Preferences →
 Browse Packages…, then up one level) and restart Sublime Text completely.
 
+## Cutting a release
+
+A release is published by pushing a `v*` tag, and by nothing else — no branch
+push publishes anything.
+
+1. Bump `PLUGIN_VERSION` in `SubMerge.py`.
+2. Add `messages/<version>.txt` with the upgrade note, and point at it from
+   `messages.json`. Sublime shows this to users after the package updates.
+3. Commit, then tag and push:
+
+```bash
+git tag v1.1.0 && git push origin v1.1.0
+```
+
+CI reruns the full test matrix, lint and build, then attaches
+`SubMerge.sublime-package` to a GitHub Release with notes generated from the
+commits since the previous tag. It uploads the exact artifact the build job
+produced rather than rebuilding, so what ships is what was tested.
+
+Those three version sites drift silently — nothing in Sublime cross-checks
+them — so the build refuses to run on a tag unless all three agree:
+
+```bash
+python3 tools/build_package.py --expect-version v1.1.0
+```
+
+Run that before tagging to check locally. A tag containing a hyphen
+(`v1.1.0-rc1`) is published as a prerelease. Re-running a tag build refreshes
+the attached asset instead of failing.
+
 ## Module versions
 
 Each module in `modules/` carries a `VERSION` that `REQUIRED_VERSIONS` in
