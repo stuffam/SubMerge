@@ -13,6 +13,7 @@ the pure logic in them (folder scanning, gap markup, color validation) without
 pulling in the editor.
 """
 
+import json
 import os
 import sys
 import types
@@ -783,6 +784,25 @@ class TestBuildPackage(unittest.TestCase):
                         ".python-version selects 3.8"
                         % (os.path.basename(path), name,
                            too_new.get(name, "?")))
+
+    def test_current_version_has_a_release_note(self):
+        # Sublime shows messages.json's entry for the new version after an
+        # upgrade.  Without one the user gets no note at all, and nothing
+        # else in the build would notice.
+        version = build_package.plugin_version()
+        with open(os.path.join(REPO, "messages.json"), encoding="utf-8") as fh:
+            messages = json.load(fh)
+        self.assertIn(version, messages)
+        self.assertTrue(os.path.isfile(os.path.join(REPO, messages[version])))
+
+    def test_install_message_version_matches_the_plugin(self):
+        # install.txt carries the version in its header and is only updated
+        # by hand, so it is exactly the kind of thing that silently goes
+        # stale between releases.
+        path = os.path.join(REPO, "messages", "install.txt")
+        with open(path, encoding="utf-8") as handle:
+            header = handle.readline().strip()
+        self.assertEqual(header, "SubMerge v%s" % build_package.plugin_version())
 
     def test_manifest_ships_nothing_it_should_not(self):
         names = [archive for _path, archive in build_package.collect()]
