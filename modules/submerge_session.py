@@ -4,6 +4,7 @@ SubMerge - session management, rendering and scroll synchronization.
 
 import json
 import os
+import re
 
 import sublime
 
@@ -14,7 +15,7 @@ from .submerge_core import Alignment, CompareOptions, CHANGED, split_lines
 # at load time to catch the "Sublime is still running an old copy of this
 # module" situation that happens when the package is overwritten in place
 # without a full restart - see _check_modules() there for why this matters.
-VERSION = 6
+VERSION = 7
 
 SETTINGS_FILE = "SubMerge.sublime-settings"
 COLOR_SCHEME_NAME = "SubMerge.hidden-color-scheme"
@@ -145,6 +146,9 @@ DEFAULT_COLORS = PRESETS[DEFAULT_PRESET]
 # underline to carry it.
 HIGHLIGHT_STYLES = ("background", "underline", "squiggly")
 
+# Tallest gap phantom we will draw.  See _gap_html().
+GAP_MAX_ROWS = 40
+
 
 # window_id -> Session
 _sessions = {}
@@ -176,10 +180,29 @@ def options_from_settings():
 # colors
 # ---------------------------------------------------------------------------
 
+# A CSS color, and nothing else.  These values are interpolated into the
+# generated color scheme and into the inline <style> of the gap phantoms, so a
+# value carrying "}" or "<" would escape its context and become markup rather
+# than a color.  The settings file is the user's own, so this is a
+# footgun-remover rather than a defence against an attacker - but a typo that
+# produces a confusing render is worth catching either way.
+_COLOR_RE = re.compile(
+    r"^(?:#[0-9a-fA-F]{3,8}|rgba?\([0-9\s.,%]+\)|[a-zA-Z]{3,20})$")
+
+
+def _safe_color(value, fallback):
+    text = str(value or "").strip()
+    if _COLOR_RE.match(text):
+        return text
+    print("SubMerge: ignoring invalid color %r (using %r)" % (value, fallback))
+    return fallback
+
+
 def _resolved_colors():
     preset_name = setting("color_preset", DEFAULT_PRESET)
     base = dict(PRESETS.get(preset_name, PRESETS[DEFAULT_PRESET]))
-    base.update(dict(setting("colors", {}) or {}))
+    for key, value in (setting("colors", {}) or {}).items():
+        base[key] = _safe_color(value, base.get(key, DEFAULT_COLORS.get(key)))
     return base
 
 
@@ -215,7 +238,6 @@ def _current_hunk_flags():
     if _highlight_style() == "background":
         return sublime.DRAW_NO_FILL
     return draw_flags_for_diff()
-
 
 
 def _folder_rule(scope, name, bold=False):
@@ -330,8 +352,9 @@ class Session(object):
         self.sources = sources or []         # original paths, when known
         self.alignment = None
         self.current_hunk = 0
-        self._navigated = False   # don't show the current-hunk marker until
-                                  # the person actually navigates to one
+        self._generation = 0      # guards against a stale async diff landing
+        # Don't show the current-hunk marker until the person navigates.
+        self._navigated = False
         self.previous_layout = window.get_layout()
         self._phantom_sets = {}
         self._last_viewport = {}
@@ -360,13 +383,17 @@ class Session(object):
         # status bar is the one place SubMerge can still show it.
         sublime.status_message(self.title())
 
+    def _display_name(self, index, view):
+        path = self.sources[index] if index < len(self.sources) else None
+        if path:
+            return os.path.basename(path)
+        if view.is_valid():
+            return view.name() or "untitled"
+        return "untitled"
+
     def title(self):
-        names = []
-        for index, view in enumerate(self.views):
-            path = self.sources[index] if index < len(self.sources) else None
-            names.append(os.path.basename(path) if path else
-                         (view.name() or "untitled") if view.is_valid() else
-                         "untitled")
+        names = [self._display_name(index, view)
+                 for index, view in enumerate(self.views)]
         prefix = "table \u2014 " if self.mode == "table" else ""
         return title_for(prefix, names)
 
@@ -438,11 +465,42 @@ class Session(object):
         return [v.substr(sublime.Region(0, v.size())) for v in self.views]
 
     def refresh(self):
+        """Re-diff and redraw now.  Blocks the caller."""
         if not self.is_alive():
             return
+        self._generation += 1
         pane_lines = [split_lines(t) for t in self.texts()]
         self.alignment = Alignment(pane_lines, options_from_settings())
         self.render()
+
+    def refresh_async(self):
+        """Re-diff off the UI thread, then redraw on it.
+
+        Building an Alignment is pure Python and takes a noticeable fraction
+        of a second on a large file, so doing it inline is what makes live
+        diffing feel like the editor has stalled.  Only the buffer reads and
+        the region drawing need the UI thread; the diff itself does not.
+        """
+        if not self.is_alive():
+            return
+        self._generation += 1
+        generation = self._generation
+        texts = self.texts()                    # buffer reads: UI thread
+        options = options_from_settings()
+
+        def work():
+            pane_lines = [split_lines(t) for t in texts]
+            alignment = Alignment(pane_lines, options)
+
+            def apply():
+                # Drop the result if another refresh started while we diffed.
+                if generation == self._generation and self.is_alive():
+                    self.alignment = alignment
+                    self.render()
+
+            sublime.set_timeout(apply, 0)
+
+        sublime.set_timeout_async(work, 0)
 
     # -- rendering ----------------------------------------------------------
 
@@ -652,7 +710,7 @@ class Session(object):
             if not view.is_valid():
                 continue
             lines = self.alignment.lines_in_hunk(hunk, pane)
-            regions = [self._full_line(view, l) for l in lines]
+            regions = [self._full_line(view, line) for line in lines]
             if regions:
                 view.add_regions(REGION_CURRENT, regions, SCOPE_CURRENT, "",
                                  _current_hunk_flags())
@@ -675,71 +733,52 @@ class Session(object):
             return False
         return True
 
-    def copy_hunk(self, hunk, source_pane, target_pane):
+    def copy_hunk(self, hunk, source_pane, target_pane, quiet=False):
+        """Apply one hunk from `source_pane` onto `target_pane`.
+
+        `quiet` suppresses the per-hunk messaging and the re-diff, so that
+        copy_all() can apply a whole run of hunks and settle up once.
+        """
         if not self.merging_allowed():
             return False
         align = self.alignment
         target = self.views[target_pane]
         if target.is_read_only():
-            sublime.error_message("SubMerge: the target tab is read only.")
+            if not quiet:
+                sublime.error_message("SubMerge: the target tab is read only.")
             return False
 
         src_lines = align.lines_in_hunk(hunk, source_pane)
-        payload = "\n".join(align.pane_lines[source_pane][i] for i in src_lines)
-
         tgt_lines = align.lines_in_hunk(hunk, target_pane)
-        if tgt_lines:
-            args = {
-                "start_line": tgt_lines[0],
-                "end_line": tgt_lines[-1] + 1,
-                "text": payload,
-                "insert": False,
-                "delete": not src_lines,
-            }
-        elif not src_lines:
-            sublime.status_message("SubMerge: nothing to copy")
+        if not src_lines and not tgt_lines:
+            if not quiet:
+                sublime.status_message("SubMerge: nothing to copy")
             return False
+
+        payload = "\n".join(align.pane_lines[source_pane][i] for i in src_lines)
+        if tgt_lines:
+            args = {"start_line": tgt_lines[0], "end_line": tgt_lines[-1] + 1,
+                    "text": payload, "insert": False, "delete": not src_lines}
         else:
             anchor = align.next_present_line(target_pane, hunk.start_row)
-            args = {
-                "start_line": anchor,
-                "end_line": anchor,
-                "text": payload,
-                "insert": True,
-            }
+            args = {"start_line": anchor, "end_line": anchor,
+                    "text": payload, "insert": True}
         target.run_command("submerge_apply_patch", args)
-        self.refresh()
+        if not quiet:
+            self.refresh()
         return True
 
     def copy_all(self, source_pane, target_pane):
         if not self.merging_allowed():
             return
         count = 0
-        for hunk in list(reversed(self.hunks())):
-            if self.copy_hunk_quiet(hunk, source_pane, target_pane):
+        # Bottom-up: each edit then leaves the line numbers of every hunk
+        # above it untouched, so the alignment stays valid for the whole run.
+        for hunk in reversed(self.hunks()):
+            if self.copy_hunk(hunk, source_pane, target_pane, quiet=True):
                 count += 1
         self.refresh()
         sublime.status_message("SubMerge: copied %d difference(s)" % count)
-
-    def copy_hunk_quiet(self, hunk, source_pane, target_pane):
-        align = self.alignment
-        target = self.views[target_pane]
-        if target.is_read_only():
-            return False
-        src_lines = align.lines_in_hunk(hunk, source_pane)
-        payload = "\n".join(align.pane_lines[source_pane][i] for i in src_lines)
-        tgt_lines = align.lines_in_hunk(hunk, target_pane)
-        if tgt_lines:
-            args = {"start_line": tgt_lines[0], "end_line": tgt_lines[-1] + 1,
-                    "text": payload, "insert": False, "delete": not src_lines}
-        elif not src_lines:
-            return False
-        else:
-            anchor = align.next_present_line(target_pane, hunk.start_row)
-            args = {"start_line": anchor, "end_line": anchor,
-                    "text": payload, "insert": True}
-        target.run_command("submerge_apply_patch", args)
-        return True
 
     # -- scroll synchronization --------------------------------------------
 
@@ -780,7 +819,11 @@ class Session(object):
             return None
         source = self.views[source_pane]
         target = self.views[target_pane]
-        line_height = source.line_height() or 1.0
+        # Every measurement below lands in the *target* pane's layout space,
+        # so it has to use the target's line height.  The panes can differ
+        # (Sublime zooms per view), and using the source's made the two drift
+        # further apart the further you scrolled.
+        line_height = target.line_height() or 1.0
 
         point = source.layout_to_text((0.0, max(0.0, y)))
         line = source.rowcol(point)[0]
@@ -804,22 +847,35 @@ class Session(object):
                 base_y = target.text_to_layout(
                     target.text_point(prev_line, 0))[1] + line_height
                 offset_rows = row - prev_row - 1
-            base_y += max(0, offset_rows) * target.line_height()
+            base_y += max(0, offset_rows) * line_height
         return max(0.0, base_y + delta)
 
 
 def _gap_html(lines, color):
-    rows = "".join('<div class="l">&nbsp;</div>' for _ in range(lines))
+    """Markup for one alignment gap.
+
+    The height is capped: a gap is a visual cue that lines are missing here,
+    and past a screenful more <div>s convey nothing while costing real layout
+    time.  Uncapped, comparing an empty file against a large one produces a
+    single phantom holding one <div> per missing line - megabytes of markup
+    for one gap, which locks up the window.
+    """
+    shown = max(0, min(lines, GAP_MAX_ROWS))
+    rows = '<div class="l">&nbsp;</div>' * shown
+    if lines > shown:
+        rows += ('<div class="n">%s more line(s) not in this pane</div>'
+                 % format(lines - shown, ","))
     return (
         '<body id="submerge-gap">'
         '<style>'
-        'html, body {{ margin: 0; padding: 0; }}'
-        '.g {{ background-color: {color}; }}'
-        '.l {{ margin: 0; padding: 0; }}'
+        'html, body { margin: 0; padding: 0; }'
+        '.g { background-color: %s; }'
+        '.l, .n { margin: 0; padding: 0; }'
+        '.n { font-style: italic; }'
         '</style>'
-        '<div class="g">{rows}</div>'
+        '<div class="g">%s</div>'
         '</body>'
-    ).format(color=color, rows=rows)
+    ) % (_safe_color(color, DEFAULT_COLORS["gap"]), rows)
 
 
 # ---------------------------------------------------------------------------
@@ -869,6 +925,26 @@ def all_sessions():
     return list(_sessions.values())
 
 
+def shutdown():
+    """Tear every session down and stop the ticker.
+
+    Called from plugin_unloaded().  Clearing _sessions is what actually stops
+    the ticker: _tick() reschedules itself for as long as any session is
+    registered, and a session whose views are still open stays "alive"
+    forever.  Without this, every package upgrade or plugin reload leaves the
+    previous module's 60 ms timer running - still holding live views, still
+    driving set_viewport_position() - alongside the new module's own ticker.
+    """
+    global _tick_running
+    for window_id, session in list(_sessions.items()):
+        try:
+            session.end()
+        except Exception as exc:
+            print("SubMerge: error ending session: %s" % exc)
+        _sessions.pop(window_id, None)
+    _tick_running = False
+
+
 def _start_ticker():
     global _tick_running
     if _tick_running:
@@ -879,6 +955,9 @@ def _start_ticker():
 
 def _tick():
     global _tick_running
+    if not _tick_running:
+        # shutdown() ran while this callback was already queued.
+        return
     for window_id, session in list(_sessions.items()):
         if not session.is_alive():
             session.end(restore_layout=False)

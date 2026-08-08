@@ -239,12 +239,22 @@
     // "content" (hash), "size_and_time" or "size".
     "folder_compare_mode": "content",
 
-    // 0 = unlimited recursion.
+    // How many nested folder listings to descend below the compared roots.
+    // 0 = unlimited.  1 lists the roots' own contents plus one level inside
+    // any folder found there; folders below that are shown but marked
+    // "depth limit" and their contents are not compared.
     "folder_max_depth": 0,
 
     // Set to false to exclude identical files (and folders whose contents
     // are all identical) from the results.
     "folder_show_identical": true,
+
+    // Whether to descend into directories that are symbolic links.  Off by
+    // default: a link pointing back at a parent folder makes the scan walk
+    // the same tree over and over.  When off, a linked folder is still listed
+    // (marked "symlink, not followed") but its contents are not compared.
+    // Loops are detected either way, so turning this on cannot hang the scan.
+    "folder_follow_symlinks": false,
 
     "folder_exclude_patterns":
     [

@@ -18,7 +18,16 @@ import html
 import re
 
 # See submerge_session.VERSION for why this exists.
-VERSION = 1
+VERSION = 2
+
+# Link targets we are willing to emit an <a href> for: absolute http(s), mail,
+# same-page anchors, and relative paths (anything with no scheme at all).
+# Everything else - "javascript:", "data:", "vbscript:" - is rendered as plain
+# text instead. The guide is packaged with the plugin and therefore trusted,
+# but this renderer is a general Markdown-to-HTML function whose output is
+# opened in the user's real browser, so it does not rely on its input being
+# trustworthy.
+_SAFE_SCHEME = re.compile(r"^(?:https?:|mailto:|#|[^:]*$)", re.IGNORECASE)
 
 CSS = """
 :root {
@@ -86,9 +95,25 @@ def _anchor(text):
     return re.sub(r"[\s]+", "-", slug)
 
 
+def _link(match):
+    """[label](href) -> <a>, but only for a scheme we trust.
+
+    `href` arrives already HTML-escaped by the caller (quotes included), so it
+    is safe to drop straight into the attribute - escaping it a second time
+    here would double-encode ampersands in query strings.
+    """
+    label, href = match.group(1), match.group(2).strip()
+    if not _SAFE_SCHEME.match(href):
+        return label
+    return '<a href="%s">%s</a>' % (href, label)
+
+
 def _inline(text):
     """Escape HTML, then re-apply the inline Markdown we support."""
-    out = html.escape(text, quote=False)
+    # quote=True matters: the results below are interpolated into an href
+    # attribute, and an unescaped double quote there would end the attribute
+    # and let the rest of the link target become markup.
+    out = html.escape(text, quote=True)
     # Inline code first, so its contents are not further transformed.
     placeholders = []
 
@@ -99,7 +124,7 @@ def _inline(text):
     out = re.sub(r"`([^`]+)`", stash_code, out)
     out = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", out)
     out = re.sub(r"(?<![*\w])\*([^*\n]+)\*(?!\w)", r"<em>\1</em>", out)
-    out = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', out)
+    out = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link, out)
     out = re.sub(r"\x00(\d+)\x00",
                  lambda m: "<code>%s</code>" % placeholders[int(m.group(1))],
                  out)

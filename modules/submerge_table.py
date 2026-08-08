@@ -14,7 +14,7 @@ import os
 import textwrap
 
 # See submerge_session.VERSION for why this exists.
-VERSION = 1
+VERSION = 2
 
 DELIMITERS = {
     ".csv": ",",
@@ -39,7 +39,14 @@ def is_table_file(path, extra_extensions=None):
 
 def sniff_delimiter(text, path=None, configured="auto"):
     if configured and configured != "auto":
-        return "\t" if configured == "\\t" else configured
+        candidate = "\t" if configured == "\\t" else configured
+        if len(candidate) == 1:
+            return candidate
+        # csv.reader raises TypeError - not csv.Error - for a delimiter that
+        # is not exactly one character, so an unusable setting has to be
+        # caught here rather than at the parse() call site.
+        print("SubMerge: csv_delimiter must be a single character "
+              "(got %r); falling back to auto-detection." % configured)
     if path:
         ext = os.path.splitext(path)[1].lower()
         if ext in DELIMITERS:
@@ -54,15 +61,20 @@ def sniff_delimiter(text, path=None, configured="auto"):
 
 
 def parse(text, delimiter):
+    if len(delimiter) != 1:
+        delimiter = ","
     try:
         reader = csv.reader(io.StringIO(text), delimiter=delimiter)
         return [row for row in reader]
     except csv.Error:
+        # Malformed quoting, an embedded NUL, an over-long field: fall back to
+        # a naive split so the file is at least viewable.
         return [line.split(delimiter) for line in text.split("\n")]
 
 
 def _wrap(cell, width):
     cell = cell.replace("\r", "")
+    width = max(1, width)      # textwrap raises ValueError for width <= 0
     if not cell:
         return [""]
     out = []
@@ -138,26 +150,30 @@ def render(table, widths, wrap=True, row_numbers=True, header_rule=True):
 def render_all(texts, paths, options):
     """Render several delimited files with shared column widths.
 
-    Returns (list_of_rendered_text, list_of_record_starts, delimiter).
+    Returns (list_of_rendered_text, delimiter).  Per-file record offsets are
+    available from render() itself for callers that need to map a rendered
+    line back to a record; nothing needs them at this level.
     """
     configured = options.get("delimiter", "auto")
     delimiter = sniff_delimiter(texts[0], paths[0] if paths else None, configured)
     tables = [parse(text, delimiter) for text in texts]
+    # Clamp rather than trust: a negative width from the settings file reaches
+    # textwrap.wrap() as an invalid width and aborts the whole comparison.
+    min_width = max(1, int(options.get("min_column_width", 3) or 3))
+    max_width = max(min_width, int(options.get("max_column_width", 40) or 40))
     widths = compute_widths(
         tables,
-        min_width=int(options.get("min_column_width", 3) or 3),
-        max_width=int(options.get("max_column_width", 40) or 40),
+        min_width=min_width,
+        max_width=max_width,
         wrap=bool(options.get("wrap_columns", True)),
     )
     rendered = []
-    starts = []
     for table in tables:
-        text, record_starts = render(
+        text, _record_starts = render(
             table, widths,
             wrap=bool(options.get("wrap_columns", True)),
             row_numbers=bool(options.get("row_numbers", True)),
             header_rule=bool(options.get("header_rule", True)),
         )
         rendered.append(text)
-        starts.append(record_starts)
-    return rendered, starts, delimiter
+    return rendered, delimiter
