@@ -51,7 +51,10 @@ body {
   font-size: 16px;
 }
 h1, h2, h3 { line-height: 1.25; margin: 2rem 0 1rem; font-weight: 600; }
-h1 { font-size: 2rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); margin-top: 0; }
+h1 {
+  font-size: 2rem; padding-bottom: .3rem; margin-top: 0;
+  border-bottom: 1px solid var(--border);
+}
 h2 { font-size: 1.5rem; padding-bottom: .3rem; border-bottom: 1px solid var(--border); }
 h3 { font-size: 1.2rem; }
 p, ul, ol, table, pre, blockquote { margin: 0 0 1rem; }
@@ -69,7 +72,10 @@ pre {
 }
 pre code { background: none; padding: 0; font-size: .85em; line-height: 1.45; }
 table { border-collapse: collapse; width: 100%; display: block; overflow-x: auto; }
-th, td { border: 1px solid var(--border); padding: .5rem .75rem; text-align: left; vertical-align: top; }
+th, td {
+  border: 1px solid var(--border); padding: .5rem .75rem;
+  text-align: left; vertical-align: top;
+}
 th { background: var(--head-bg); font-weight: 600; }
 tr:nth-child(2n) td { background: var(--head-bg); }
 blockquote {

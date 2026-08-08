@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Sublime Text 4 bundles Python 3.8, so 3.8 is the version that
+          # actually has to pass.  It is pinned to 22.04 because setup-python
+          # has no 3.8 build for ubuntu-24.04, which is what ubuntu-latest is.
+          - os: ubuntu-22.04
+            python-version: "3.8"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          # macOS and Windows cover the platform-specific paths: file:// URL
+          # construction, symlink handling and permission bits all differ.
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Byte-compile every module
+        # Catches syntax that the running Python version rejects before the
+        # tests get a chance to import anything.
+        run: python -m compileall -q SubMerge.py modules tools test
+
+      - name: Run tests
+        run: python -m unittest discover -s test -v
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: python -m pip install --disable-pip-version-check pycodestyle
+
+      - name: pycodestyle
+        # Line length and the fixture exclusion come from setup.cfg, so a bare
+        # `pycodestyle` run locally checks exactly what this checks.
+        run: pycodestyle SubMerge.py modules tools test
+
+  build:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build SubMerge.sublime-package
+        # The script fails the build if a file the plugin loads at runtime
+        # would be missing from the archive, or if anything on its refusal
+        # list (workspaces, .pyc, .DS_Store) would be shipped.
+        run: python tools/build_package.py --output-dir dist
+
+      - name: Check the archive is reproducible
+        run: |
+          sha256sum dist/SubMerge.sublime-package > first.sha256
+          python tools/build_package.py --output-dir dist > /dev/null
+          sha256sum -c first.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SubMerge.sublime-package
+          path: dist/SubMerge.sublime-package
+          if-no-files-found: error
