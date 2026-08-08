@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+    # A v* tag runs the same test/lint/build gauntlet and then publishes the
+    # built package as a release.  Pushing the tag is the only thing that
+    # triggers a release; nothing publishes off a branch.
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: test (${{ matrix.os }}, py${{ matrix.python-version }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Sublime Text 4 bundles Python 3.8, so 3.8 is the version that
+          # actually has to pass.  It is pinned to 22.04 because setup-python
+          # has no 3.8 build for ubuntu-24.04, which is what ubuntu-latest is.
+          - os: ubuntu-22.04
+            python-version: "3.8"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          # macOS and Windows cover the platform-specific paths: file:// URL
+          # construction, symlink handling and permission bits all differ.
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Byte-compile every module
+        # Catches syntax that the running Python version rejects before the
+        # tests get a chance to import anything.
+        run: python -m compileall -q SubMerge.py modules tools test
+
+      - name: Run tests
+        run: python -m unittest discover -s test -v
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - run: python -m pip install --disable-pip-version-check pycodestyle
+
+      - name: pycodestyle
+        # Line length and the fixture exclusion come from setup.cfg, so a bare
+        # `pycodestyle` run locally checks exactly what this checks.
+        run: pycodestyle SubMerge.py modules tools test
+
+  build:
+    needs: [test, lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Build SubMerge.sublime-package
+        # The script fails the build if a file the plugin loads at runtime
+        # would be missing from the archive, or if anything on its refusal
+        # list (workspaces, .pyc, .DS_Store) would be shipped.
+        #
+        # On a tag it additionally refuses to build unless the tag,
+        # PLUGIN_VERSION and messages.json all agree - catching a release cut
+        # without a version bump before it reaches anyone.  Empty off a tag,
+        # which the script reads as "no check".
+        env:
+          EXPECT_VERSION: >-
+            ${{ startsWith(github.ref, 'refs/tags/v') && github.ref_name || '' }}
+        run: |
+          python tools/build_package.py --output-dir dist \
+            --expect-version "$EXPECT_VERSION"
+
+      - name: Check the archive is reproducible
+        run: |
+          sha256sum dist/SubMerge.sublime-package > first.sha256
+          python tools/build_package.py --output-dir dist > /dev/null
+          sha256sum -c first.sha256
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: SubMerge.sublime-package
+          path: dist/SubMerge.sublime-package
+          if-no-files-found: error
+
+  release:
+    # Tag pushes only.  Every other event stops at build, so nothing is ever
+    # published because a branch moved.
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test, lint, build]
+    runs-on: ubuntu-latest
+    permissions:
+      # The only job that can write to the repository, and only to cut the
+      # release.  Everything else runs with the read-only default above.
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Full history, so --generate-notes has the previous tag to diff
+          # against instead of inventing a first-release changelog.
+          fetch-depth: 0
+
+      - name: Download the package built by the build job
+        # Reuse the exact bytes CI already verified rather than rebuilding
+        # and publishing an archive nothing tested.
+        uses: actions/download-artifact@v8
+        with:
+          name: SubMerge.sublime-package
+          path: dist
+
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          test -s dist/SubMerge.sublime-package
+
+          # A tag like v1.1.0-rc1 is a prerelease; v1.1.0 is not.
+          prerelease=""
+          case "$TAG" in
+            *-*) prerelease="--prerelease" ;;
+          esac
+
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # Re-running a tag build should refresh the asset, not fail.
+            gh release upload "$TAG" dist/SubMerge.sublime-package --clobber
+          else
+            gh release create "$TAG" dist/SubMerge.sublime-package \
+              --title "SubMerge ${TAG#v}" \
+              --generate-notes \
+              $prerelease
+          fi
+
+          gh release view "$TAG" --json tagName,isPrerelease,assets \
+            --jq '"published \(.tagName) prerelease=\(.isPrerelease) assets=\([.assets[].name] | join(","))"'

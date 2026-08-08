@@ -9,6 +9,8 @@ CSV/TSV rendering in submerge_table.py.
 
 import os
 import tempfile
+import urllib.parse
+import urllib.request
 import webbrowser
 
 import sublime
@@ -18,19 +20,24 @@ from .modules import submerge_core as core
 from .modules import submerge_docs as docs
 from .modules import submerge_folder as folders
 from .modules import submerge_metadata as metadata
-from .modules import submerge_session as sm
+from .modules import submerge_session as sessions
+from .modules.submerge_core import MAX_PANES, PANE_LETTERS
+from .modules.submerge_session import (
+    PACKAGE, SETTINGS_FILE, setting, settings)
 from .modules import submerge_table as table
 
 PLUGIN_VERSION = "1.0.0"
 
-MAX_PANES = 3
+# Rewritten in place each time the guide is opened; see the command below.
+GUIDE_FILENAME = "SubMerge-user-guide.html"
+
 REQUIRED_VERSIONS = {
-    "submerge_core": (core, 2),
-    "submerge_session": (sm, 6),
-    "submerge_folder": (folders, 2),
-    "submerge_metadata": (metadata, 1),
-    "submerge_table": (table, 1),
-    "submerge_docs": (docs, 1),
+    "submerge_core": (core, 3),
+    "submerge_session": (sessions, 7),
+    "submerge_folder": (folders, 3),
+    "submerge_metadata": (metadata, 2),
+    "submerge_table": (table, 2),
+    "submerge_docs": (docs, 2),
 }
 _marked = []          # list of view ids marked with "Mark for Compare"
 _marked_paths = []    # list of side bar paths marked for comparison
@@ -73,20 +80,21 @@ def _check_modules():
 
 
 def plugin_loaded():
-    sm.write_color_scheme(force=True)
-    sm.settings().add_on_change("submerge", _on_settings_changed)
+    sessions.write_color_scheme(force=True)
+    settings().add_on_change("submerge", _on_settings_changed)
     _check_modules()
 
 
 def plugin_unloaded():
-    sm.settings().clear_on_change("submerge")
-    for session in sm.all_sessions():
-        session.end()
+    settings().clear_on_change("submerge")
+    # Not just end() on each: the registry has to be emptied and the ticker
+    # stopped, or this module's 60 ms timer outlives the reload.
+    sessions.shutdown()
 
 
 def _on_settings_changed():
-    sm.write_color_scheme()
-    for session in sm.all_sessions():
+    sessions.write_color_scheme()
+    for session in sessions.all_sessions():
         session.refresh()
 
 
@@ -190,7 +198,7 @@ def _selected_tab_views(window):
 
 def _comparable_tab_views(window):
     views = [v for v in _selected_tab_views(window)
-             if not v.settings().get("submerge_folder_view")
+             if not folders.is_folder_view(v)
              and not v.settings().get("submerge_metadata_view")]
     return views if 2 <= len(views) <= MAX_PANES else []
 
@@ -198,7 +206,7 @@ def _comparable_tab_views(window):
 def _folder_view(window, group=-1, index=-1):
     """The folder comparison result a menu item was invoked on, if any."""
     view = _view_at(window, group, index)
-    if view is not None and view.settings().get("submerge_folder_view"):
+    if folders.is_folder_view(view):
         return view
     return None
 
@@ -239,14 +247,14 @@ def _new_window(single_column=False, sidebar=True, minimap=True):
         return None
     if single_column:
         try:
-            window.set_layout(sm.columns_layout(1))
+            window.set_layout(sessions.columns_layout(1))
         except Exception:
             pass
     return _configure_window(window, sidebar=sidebar, minimap=minimap)
 
 
 def _hide_sidebar():
-    return bool(sm.setting("new_window_hide_sidebar", True))
+    return bool(setting("new_window_hide_sidebar", True))
 
 
 def _target_window(window, kind="files"):
@@ -255,12 +263,12 @@ def _target_window(window, kind="files"):
     `kind` is "files" or "folders"; a folder result is a single generated tab,
     so it follows the report chrome rather than the comparison chrome.
     """
-    if not sm.setting("compare_in_new_window", False):
+    if not setting("compare_in_new_window", True):
         return window
     if kind == "folders":
-        hide_minimap = bool(sm.setting("report_window_hide_minimap", True))
+        hide_minimap = bool(setting("report_window_hide_minimap", True))
     else:
-        hide_minimap = bool(sm.setting("new_window_hide_minimap", False))
+        hide_minimap = bool(setting("new_window_hide_minimap", False))
     fresh = _new_window(sidebar=not _hide_sidebar(), minimap=not hide_minimap)
     return fresh if fresh and fresh.id() != window.id() else window
 
@@ -282,26 +290,26 @@ def _report_window(preferred):
       "current" - wherever the request came from, comparison or not
     """
     global _metadata_window_id
-    mode = sm.setting("metadata_report_window", "auto")
+    mode = setting("metadata_report_window", "auto")
 
     if mode == "current":
         return preferred
 
     if mode == "auto" and preferred is not None and \
-            sm.get_session(preferred) is None:
+            sessions.get_session(preferred) is None:
         return preferred
 
     # Reuse the report window from last time rather than piling up windows.
     if _metadata_window_id is not None:
         for window in sublime.windows():
             if window.id() == _metadata_window_id and \
-                    sm.get_session(window) is None:
+                    sessions.get_session(window) is None:
                 return window
 
     window = _new_window(
         single_column=True,
         sidebar=not _hide_sidebar(),
-        minimap=not bool(sm.setting("report_window_hide_minimap", True)),
+        minimap=not bool(setting("report_window_hide_minimap", True)),
     ) or preferred
     if window is not None:
         _metadata_window_id = window.id()
@@ -309,12 +317,9 @@ def _report_window(preferred):
 
 
 def _metadata_fields():
-    fields = list(sm.setting("metadata_fields", None) or metadata.COMPARABLE)
-    if sm.setting("ignore_line_endings", True):
-        # CRLF vs LF then differs in bytes only; do not report it as metadata.
-        fields = [f for f in fields
-                  if f not in ("line_endings", "sha1", "size")]
-    return fields
+    return metadata.comparable_fields(
+        setting("metadata_fields", None),
+        bool(setting("ignore_line_endings", True)))
 
 
 def begin_comparison(window, sources):
@@ -333,7 +338,7 @@ def begin_comparison(window, sources):
         return
 
     table_mode = _table_mode(sources)
-    alignment = core.compare_texts(texts, sm.options_from_settings())
+    alignment = core.compare_texts(texts, sessions.options_from_settings())
 
     # Equivalent to alignment.identical, but works even against an older
     # engine that predates that property.
@@ -347,15 +352,15 @@ def begin_comparison(window, sources):
     else:
         _start_text_comparison(target, sources)
 
-    if sm.setting("compare_metadata", False) and \
-            sm.setting("metadata_report_always", False):
+    if setting("compare_metadata", False) and \
+            setting("metadata_report_always", False):
         _open_metadata_report(window, sources, content_identical=False)
 
 
 def _handle_identical(window, sources):
     paths = [source.path for source in sources]
 
-    if sm.setting("compare_metadata", False) and all(paths) and \
+    if setting("compare_metadata", False) and all(paths) and \
             not any(s.is_dirty() for s in sources):
         metas = [metadata.collect(path) for path in paths]
         differing = metadata.differing_fields(metas, _metadata_fields())
@@ -367,11 +372,13 @@ def _handle_identical(window, sources):
                 no_title="No"
                 )
             if result == sublime.DIALOG_YES:
-                _open_metadata_report(window, sources, content_identical=True,
-                                  metas=metas)
+                _open_metadata_report(window, sources,
+                                      content_identical=True, metas=metas)
             return
 
-    sublime.message_dialog("SubMerge\n\nThe files are identical.\n\nNo comparison tabs were opened.")
+    sublime.message_dialog(
+        "SubMerge\n\nThe files are identical.\n\n"
+        "No comparison tabs were opened.")
     sublime.status_message("SubMerge: files are identical")
 
 
@@ -390,8 +397,9 @@ def _start_text_comparison(window, sources):
             # An unsaved buffer cannot be moved between windows, so compare a
             # detached copy of it instead.
             view = window.new_file()
-            view.set_name(sm.title_for("copy \u2014 ", [source.label()]))
+            view.set_name(sessions.title_for("copy \u2014 ", [source.label()]))
             view.set_scratch(True)
+            view.settings().set("submerge_generated", True)
             view.run_command("submerge_replace_all", {"text": source.text()})
         if view is None:
             sublime.error_message("SubMerge: cannot open %s" % source.label())
@@ -408,46 +416,47 @@ def _when_loaded(window, views, attempts=0, sources=None):
         sublime.set_timeout(
             lambda: _when_loaded(window, views, attempts + 1, sources), 50)
         return
-    sm.start_session(window, views, mode="text",
-                     sources=[s.path for s in (sources or [])])
+    sessions.start_session(window, views, mode="text",
+                           sources=[s.path for s in (sources or [])])
 
 
 # -- CSV / TSV table view ---------------------------------------------------
 
 def _table_mode(sources):
-    if not sm.setting("csv_table_view", False):
+    if not setting("csv_table_view", False):
         return False
-    extras = sm.setting("csv_extra_extensions", [])
+    extras = setting("csv_extra_extensions", [])
     return all(table.is_table_file(source.path, extras) for source in sources)
 
 
 def _table_options():
     return {
-        "delimiter": sm.setting("csv_delimiter", "auto"),
-        "max_column_width": sm.setting("csv_max_column_width", 40),
-        "min_column_width": sm.setting("csv_min_column_width", 3),
-        "wrap_columns": sm.setting("csv_wrap_columns", True),
-        "row_numbers": sm.setting("csv_row_numbers", True),
-        "header_rule": sm.setting("csv_header_rule", True),
+        "delimiter": setting("csv_delimiter", "auto"),
+        "max_column_width": setting("csv_max_column_width", 40),
+        "min_column_width": setting("csv_min_column_width", 3),
+        "wrap_columns": setting("csv_wrap_columns", True),
+        "row_numbers": setting("csv_row_numbers", True),
+        "header_rule": setting("csv_header_rule", True),
     }
 
 
 def _start_table_comparison(window, sources, texts):
-    rendered, _starts, delimiter = table.render_all(
+    rendered, delimiter = table.render_all(
         texts, [s.path for s in sources], _table_options())
     views = []
     for source, text in zip(sources, rendered):
         view = window.new_file()
-        view.set_name(sm.title_for("table \u2014 ", [source.label()]))
+        view.set_name(sessions.title_for("table \u2014 ", [source.label()]))
         view.set_scratch(True)
         view.settings().set("word_wrap", False)
         view.settings().set("submerge_table_view", True)
+        view.settings().set("submerge_generated", True)
         view.settings().set("submerge_source_path", source.path)
         view.run_command("submerge_replace_all", {"text": text})
         view.set_read_only(True)
         views.append(view)
-    sm.start_session(window, views, mode="table",
-                     sources=[s.path for s in sources])
+    sessions.start_session(window, views, mode="table",
+                           sources=[s.path for s in sources])
     sublime.status_message(
         "SubMerge: table view (delimiter %r) - merging is disabled here"
         % delimiter)
@@ -468,19 +477,22 @@ def _open_metadata_report(window, sources, content_identical, metas=None):
     if window is None:
         return None
     view = window.new_file()
-    sm.bump_color_scheme(view)
-    view.set_name(sm.title_for(
+    sessions.bump_color_scheme(view)
+    view.set_name(sessions.title_for(
         "metadata \u2014 ", [os.path.basename(p) for p in paths]))
     view.set_scratch(True)
     view.settings().set("word_wrap", False)
     view.settings().set("submerge_metadata_view", True)
+    view.settings().set("submerge_generated", True)
     view.run_command("submerge_replace_all", {"text": text})
     view.set_read_only(True)
     try:
         view.assign_syntax(
-            "Packages/%s/SubMergeMetadata.sublime-syntax" % sm.PACKAGE)
-    except Exception:
-        pass
+            "Packages/%s/SubMergeMetadata.sublime-syntax" % PACKAGE)
+    except Exception as exc:
+        # Without the syntax this report renders as flat, uncolored text -
+        # exactly what the generated color scheme exists to prevent.
+        print("SubMerge: could not assign the metadata syntax: %s" % exc)
     window.focus_view(view)
     if hasattr(window, "bring_to_front"):
         try:
@@ -543,46 +555,44 @@ class SubmergeCompareFoldersCommand(sublime_plugin.WindowCommand):
         return "SubMerge: Compare %d Folders" % count
 
 
+def _marked_views():
+    """The still-open views behind the marked view ids."""
+    out = []
+    for view_id in _marked:
+        view = sublime.View(view_id)
+        if view.is_valid():
+            out.append(view)
+    return out
+
+
 class SubmergeMarkForCompareCommand(sublime_plugin.WindowCommand):
     """Tab / buffer context menu: remember this tab as a comparison source."""
 
     def run(self, group=-1, index=-1, add=False):
-        view = self._target(group, index)
+        view = _view_at(self.window, group, index)
         if view is None:
             return
-        global _marked
         if view.id() in _marked:
             # Already marked - this entry reads "Remove ... from Comparison".
             _marked.remove(view.id())
             self._announce("unmarked %s" % _describe(view))
             return
         if not add:
-            _marked = []
+            del _marked[:]
         _marked.append(view.id())
-        _marked[:] = _marked[-MAX_PANES:]
+        del _marked[:-MAX_PANES]
         self._announce("marked %s"
-                       % ", ".join(_describe(v) for v in self._marked_views()))
+                       % ", ".join(_describe(v) for v in _marked_views()))
 
     def _announce(self, what):
-        remaining = len(self._marked_views())
+        remaining = len(_marked_views())
         if remaining:
             sublime.status_message("SubMerge: %s (%d marked)" % (what, remaining))
         else:
             sublime.status_message("SubMerge: %s (nothing marked)" % what)
 
-    def _target(self, group, index):
-        return _view_at(self.window, group, index)
-
-    def _marked_views(self):
-        out = []
-        for view_id in _marked:
-            view = sublime.View(view_id)
-            if view.is_valid():
-                out.append(view)
-        return out
-
     def description(self, group=-1, index=-1, add=False):
-        view = self._target(group, index)
+        view = _view_at(self.window, group, index)
         if view is not None and view.id() in _marked:
             return "SubMerge: Remove This Tab from Comparison"
         if add:
@@ -590,7 +600,7 @@ class SubmergeMarkForCompareCommand(sublime_plugin.WindowCommand):
         return "SubMerge: Mark for Comparison"
 
     def is_visible(self, group=-1, index=-1, add=False):
-        view = self._target(group, index)
+        view = _view_at(self.window, group, index)
         marked = view is not None and view.id() in _marked
         if add:
             # The "add" entry doubles as the "remove" entry for a marked tab.
@@ -602,9 +612,8 @@ class SubmergeCompareWithMarkedCommand(sublime_plugin.WindowCommand):
     """Tab / buffer context menu: compare this tab with the marked tab(s)."""
 
     def run(self, group=-1, index=-1):
-        helper = SubmergeMarkForCompareCommand(self.window)
-        view = helper._target(group, index)
-        views = helper._marked_views()
+        view = _view_at(self.window, group, index)
+        views = _marked_views()
         if view is not None and view.id() not in [v.id() for v in views]:
             views.append(view)
         views = views[:MAX_PANES]
@@ -617,7 +626,7 @@ class SubmergeCompareWithMarkedCommand(sublime_plugin.WindowCommand):
         begin_comparison(self.window, [Source(view=v) for v in views])
 
     def description(self, group=-1, index=-1):
-        views = SubmergeMarkForCompareCommand(self.window)._marked_views()
+        views = _marked_views()
         if len(views) == 1:
             return "SubMerge: Compare with '%s'" % _describe(views[0])
         if len(views) >= 2:
@@ -668,7 +677,6 @@ class SubmergeMarkPathForCompareCommand(sublime_plugin.WindowCommand):
         paths = [p for p in _normalize_paths(kwargs) if os.path.exists(p)]
         if not paths:
             return
-        global _marked_paths
         already = [p for p in paths if p in _marked_paths]
         if already and len(already) == len(paths):
             # Everything selected is already marked - unmark it.
@@ -679,11 +687,11 @@ class SubmergeMarkPathForCompareCommand(sublime_plugin.WindowCommand):
                 % (", ".join(_basename(p) for p in already), len(_marked_paths)))
             return
         if not add:
-            _marked_paths = []
+            del _marked_paths[:]
         for path in paths:
             if path not in _marked_paths:
                 _marked_paths.append(path)
-        _marked_paths[:] = _marked_paths[-MAX_PANES:]
+        del _marked_paths[:-MAX_PANES]
         sublime.status_message(
             "SubMerge: marked %s"
             % ", ".join(_basename(p) for p in _marked_paths))
@@ -727,12 +735,16 @@ class SubmergeCompareWithMarkedPathCommand(sublime_plugin.WindowCommand):
 
         files = [p for p in combined if os.path.isfile(p)]
         dirs = [p for p in combined if os.path.isdir(p)]
-        del _marked_paths[:]
 
+        # Only discard the marks once we know we can act on them: otherwise a
+        # mixed selection wipes them and the "mark files only, or folders
+        # only" advice cannot be followed without starting over.
         if len(files) == len(combined):
+            del _marked_paths[:]
             begin_comparison(self.window,
                              _sources_from_paths(self.window, files))
         elif len(dirs) == len(combined):
+            del _marked_paths[:]
             window = self.window
             sublime.set_timeout_async(
                 lambda: folders.open_folder_compare(
@@ -771,11 +783,7 @@ def _basename(path):
 
 def _marked_summary():
     """Everything currently marked, as display names."""
-    names = []
-    for view_id in _marked:
-        view = sublime.View(view_id)
-        if view.is_valid():
-            names.append(_describe(view))
+    names = [_describe(view) for view in _marked_views()]
     names.extend(_basename(p) for p in _marked_paths if os.path.exists(p))
     return names
 
@@ -809,7 +817,7 @@ class SubmergeCompareOpenTabsCommand(sublime_plugin.WindowCommand):
 
     def run(self):
         self.views = [v for v in self.window.views()
-                      if not v.settings().get("submerge_folder_view")
+                      if not folders.is_folder_view(v)
                       and not v.settings().get("submerge_metadata_view")]
         if len(self.views) < 2:
             sublime.error_message("SubMerge: open at least two tabs first.")
@@ -866,7 +874,7 @@ class SubmergeCompareWithFileCommand(sublime_plugin.WindowCommand):
     """Compare the active tab against one or two files chosen from disk."""
 
     def run(self, group=-1, index=-1):
-        view = SubmergeMarkForCompareCommand(self.window)._target(group, index)
+        view = _view_at(self.window, group, index)
         if view is None:
             return
         self.base = view
@@ -896,7 +904,7 @@ class SubmergeCompareWithFileCommand(sublime_plugin.WindowCommand):
 
 class _SessionTextCommand(sublime_plugin.TextCommand):
     def session(self):
-        return sm.session_for_view(self.view)
+        return sessions.session_for_view(self.view)
 
     def is_enabled(self, **kwargs):
         return self.session() is not None
@@ -955,7 +963,7 @@ class SubmergeGotoMovedPartnerCommand(_SessionTextCommand):
         other.show_at_center(point)
         session.window.focus_view(other)
         sublime.status_message("SubMerge: moved line - pane %s line %d"
-                               % ("ABC"[other_pane], other_line + 1))
+                               % (PANE_LETTERS[other_pane], other_line + 1))
 
 
 class SubmergeCopyDifferenceCommand(_SessionTextCommand):
@@ -991,7 +999,7 @@ class SubmergeCopyDifferenceCommand(_SessionTextCommand):
         options = [p for p in range(session.pane_count) if p != source]
         if len(options) == 1:
             return self._apply(session, source, options[0], all_differences)
-        items = ["Pane %s \u2014 %s" % ("ABC"[p], _describe(session.views[p]))
+        items = ["Pane %s \u2014 %s" % (PANE_LETTERS[p], _describe(session.views[p]))
                  for p in options]
 
         def done(choice):
@@ -1003,10 +1011,10 @@ class SubmergeCopyDifferenceCommand(_SessionTextCommand):
 
     def _apply(self, session, source, target, all_differences):
         if all_differences:
-            if sm.setting("confirm_copy_all", True):
+            if setting("confirm_copy_all", True):
                 if not sublime.ok_cancel_dialog(
                         "SubMerge: copy every difference from pane %s to pane %s?"
-                        % ("ABC"[source], "ABC"[target]), "Copy All"):
+                        % (PANE_LETTERS[source], PANE_LETTERS[target]), "Copy All"):
                     return
             session.copy_all(source, target)
             return
@@ -1019,7 +1027,7 @@ class SubmergeCopyDifferenceCommand(_SessionTextCommand):
             session.current_hunk = min(index, max(0, len(session.hunks()) - 1))
             session.highlight_current_hunk(scroll=False)
             sublime.status_message("SubMerge: copied difference to pane %s"
-                                   % "ABC"[target])
+                                   % PANE_LETTERS[target])
 
 
 class SubmergeCopyAllDifferencesCommand(_SessionTextCommand):
@@ -1029,11 +1037,25 @@ class SubmergeCopyAllDifferencesCommand(_SessionTextCommand):
 
 
 class SubmergeApplyPatchCommand(sublime_plugin.TextCommand):
-    """Internal: replace/insert/delete a line range.  Never call directly."""
+    """Internal: replace/insert/delete a line range.
+
+    Sublime registers every TextCommand globally, so "internal" in a docstring
+    is not a guard - the console, a stray key binding or another package can
+    all reach this and destroy a buffer.  is_visible() keeps it out of the
+    command palette and run() refuses to touch a view that is not part of a
+    live comparison.
+    """
+
+    def is_visible(self):
+        return False
 
     def run(self, edit, start_line=0, end_line=0, text="", insert=False,
             delete=False):
         view = self.view
+        if sessions.session_for_view(view) is None:
+            return
+        start_line = max(0, int(start_line))
+        end_line = max(start_line, int(end_line))
         last_row = view.rowcol(view.size())[0]
 
         if delete:
@@ -1067,9 +1089,18 @@ class SubmergeApplyPatchCommand(sublime_plugin.TextCommand):
 
 
 class SubmergeReplaceAllCommand(sublime_plugin.TextCommand):
-    """Internal: used to populate generated views."""
+    """Internal: used to populate generated views.
+
+    Only ever runs against a view SubMerge itself created and flagged, so that
+    invoking it by hand cannot wipe out a real file's buffer.
+    """
+
+    def is_visible(self):
+        return False
 
     def run(self, edit, text=""):
+        if not self.view.settings().get("submerge_generated"):
+            return
         read_only = self.view.is_read_only()
         if read_only:
             self.view.set_read_only(False)
@@ -1084,7 +1115,7 @@ class SubmergeReplaceAllCommand(sublime_plugin.TextCommand):
 
 class SubmergeRefreshCommand(sublime_plugin.WindowCommand):
     def run(self):
-        session = sm.get_session(self.window)
+        session = sessions.get_session(self.window)
         if session:
             session.refresh()
             stats = session.alignment.stats()
@@ -1093,22 +1124,22 @@ class SubmergeRefreshCommand(sublime_plugin.WindowCommand):
                 % (stats["hunks"], stats.get("moved", 0)))
         else:
             view = self.window.active_view()
-            if view and view.settings().get("submerge_folder_view"):
+            if folders.is_folder_view(view):
                 folders.rescan(view)
 
     def is_enabled(self):
         view = self.window.active_view()
-        return (sm.get_session(self.window) is not None
-                or bool(view and view.settings().get("submerge_folder_view")))
+        return (sessions.get_session(self.window) is not None
+                or folders.is_folder_view(view))
 
 
 class SubmergeEndComparisonCommand(sublime_plugin.WindowCommand):
     def run(self):
-        if sm.end_session(self.window):
+        if sessions.end_session(self.window):
             sublime.status_message("SubMerge: comparison closed")
 
     def is_enabled(self):
-        return sm.get_session(self.window) is not None
+        return sessions.get_session(self.window) is not None
 
 
 class SubmergeMetadataReportCommand(sublime_plugin.WindowCommand):
@@ -1126,25 +1157,39 @@ class SubmergeMetadataReportCommand(sublime_plugin.WindowCommand):
         texts = [s.text() for s in sources]
         identical = (all(t is not None for t in texts)
                      and not core.compare_texts(
-                         texts, sm.options_from_settings()).hunks)
+                         texts, sessions.options_from_settings()).hunks)
         _open_metadata_report(self.window, sources, content_identical=identical)
 
     def _paths(self):
-        session = sm.get_session(self.window)
+        session = sessions.get_session(self.window)
         if session and all(session.sources):
             return list(session.sources)
         view = self.window.active_view()
-        if view and view.settings().get("submerge_folder_view"):
-            if len(view.sel()):
-                row = view.rowcol(view.sel()[0].begin())[0]
-                node = folders.entry_for_row(view, row)
-                if node and not node.is_dir:
-                    return [p for p in node.paths if p]
-        helper = SubmergeMarkForCompareCommand(self.window)
-        return [v.file_name() for v in helper._marked_views() if v.file_name()]
+        if folders.is_folder_view(view) and len(view.sel()):
+            row = view.rowcol(view.sel()[0].begin())[0]
+            node = folders.entry_for_row(view, row)
+            if node and not node.is_dir:
+                return [p for p in node.paths if p]
+        return [v.file_name() for v in _marked_views() if v.file_name()]
 
     def is_enabled(self):
         return len(self._paths()) >= 2
+
+
+def _apply_option_change(window, option):
+    """Re-run whatever the setting that just changed actually affects.
+
+    A folder rescan re-stats, re-reads and re-hashes every file in every root,
+    so it has to be reserved for settings that change what a scan *produces*.
+    Previously any option change refreshed a focused folder result, which
+    meant picking a new color preset re-hashed the whole tree.
+    """
+    session = sessions.get_session(window)
+    if session:
+        session.refresh()
+    view = window.active_view()
+    if option in folders.RESCAN_ON and folders.is_folder_view(view):
+        folders.rescan(view)
 
 
 class SubmergeToggleOptionCommand(sublime_plugin.WindowCommand):
@@ -1168,20 +1213,13 @@ class SubmergeToggleOptionCommand(sublime_plugin.WindowCommand):
     }
 
     def run(self, option):
-        settings = sm.settings()
-        settings.set(option, not settings.get(option, False))
-        sublime.save_settings(sm.SETTINGS_FILE)
-        session = sm.get_session(self.window)
-        if session:
-            session.refresh()
-        view = self.window.active_view()
-        if view and view.settings().get("submerge_folder_view") and \
-                option.startswith(("folder_", "compare_metadata",
-                                   "ignore_line_endings")):
-            folders.rescan(view)
+        store = settings()
+        store.set(option, not store.get(option, False))
+        sublime.save_settings(SETTINGS_FILE)
+        _apply_option_change(self.window, option)
 
     def is_checked(self, option):
-        return bool(sm.setting(option, False))
+        return bool(setting(option, False))
 
     def description(self, option):
         return self.LABELS.get(option, option)
@@ -1193,27 +1231,23 @@ class SubmergeSetOptionCommand(sublime_plugin.WindowCommand):
     this share one command instead of needing one class per setting."""
 
     def run(self, option, value):
-        settings = sm.settings()
-        settings.set(option, value)
-        sublime.save_settings(sm.SETTINGS_FILE)
-        sm.write_color_scheme(force=True)
-        session = sm.get_session(self.window)
-        if session:
-            session.refresh()
-        view = self.window.active_view()
-        if view and view.settings().get("submerge_folder_view"):
-            folders.rescan(view)
+        store = settings()
+        store.set(option, value)
+        sublime.save_settings(SETTINGS_FILE)
+        sessions.write_color_scheme(force=True)
+        _apply_option_change(self.window, option)
         sublime.status_message("SubMerge: %s set to %s" % (option, value))
 
     def is_checked(self, option, value):
-        return sm.setting(option, None) == value
+        return setting(option, None) == value
 
 
 class SubmergeOpenSettingsCommand(sublime_plugin.WindowCommand):
     def run(self):
         self.window.run_command("edit_settings", {
-            "base_file": "${packages}/%s/SubMerge.sublime-settings" % sm.PACKAGE,
-            "default": "// Settings in here override those in \"SubMerge.sublime-settings\"\n\n{\n\t$0\n}\n",
+            "base_file": "${packages}/%s/SubMerge.sublime-settings" % PACKAGE,
+            "default": ("// Settings in here override those in "
+                        "\"SubMerge.sublime-settings\"\n\n{\n\t$0\n}\n"),
         })
 
 
@@ -1223,7 +1257,7 @@ class SubmergeOpenKeymapCommand(sublime_plugin.WindowCommand):
                     "osx": "Default (OSX).sublime-keymap",
                     "linux": "Default (Linux).sublime-keymap"}[sublime.platform()]
         self.window.run_command("edit_settings", {
-            "base_file": "${packages}/%s/%s" % (sm.PACKAGE, platform),
+            "base_file": "${packages}/%s/%s" % (PACKAGE, platform),
             "user_file": "${packages}/User/" + platform,
             "default": "[\n\t$0\n]\n",
         })
@@ -1239,7 +1273,7 @@ class SubmergeOpenUserGuideCommand(sublime_plugin.WindowCommand):
     def run(self):
         try:
             source = sublime.load_resource(
-                "Packages/%s/README.md" % sm.PACKAGE)
+                "Packages/%s/README.md" % PACKAGE)
         except Exception as exc:
             sublime.error_message(
                 "SubMerge: could not read the user guide.\n\n%s" % exc)
@@ -1247,12 +1281,22 @@ class SubmergeOpenUserGuideCommand(sublime_plugin.WindowCommand):
 
         try:
             page = docs.build_page(source, version=PLUGIN_VERSION)
-            handle = tempfile.NamedTemporaryFile(
-                mode="w", suffix=".html", prefix="SubMerge-guide-",
-                delete=False, encoding="utf-8")
-            with handle:
+            # One stable filename, rewritten each time: NamedTemporaryFile
+            # with delete=False left a new copy of the guide behind on every
+            # invocation, and nothing ever cleaned them up.
+            path = os.path.join(tempfile.gettempdir(), GUIDE_FILENAME)
+            with open(path, "w", encoding="utf-8") as handle:
                 handle.write(page)
-            webbrowser.open("file://" + handle.name)
+            # pathname2url rather than "file://" + path: on Windows the
+            # latter produces file://C:\... , where the drive letter parses
+            # as a hostname and the backslashes are not separators.  This
+            # spelling (rather than pathlib.Path.as_uri()) keeps the module
+            # importable on Sublime's legacy 3.3 plugin host, so a package
+            # built without .python-version degrades instead of failing to
+            # load every command.
+            url = urllib.parse.urljoin(
+                "file:", urllib.request.pathname2url(path))
+            webbrowser.open(url)
             sublime.status_message("SubMerge: user guide opened in your browser")
         except Exception as exc:
             sublime.error_message(
@@ -1263,7 +1307,7 @@ class SubmergeOpenUserGuideCommand(sublime_plugin.WindowCommand):
 class SubmergeOpenReadmeCommand(sublime_plugin.WindowCommand):
     def run(self):
         self.window.run_command(
-            "open_file", {"file": "${packages}/%s/README.md" % sm.PACKAGE})
+            "open_file", {"file": "${packages}/%s/README.md" % PACKAGE})
 
 
 # ---------------------------------------------------------------------------
@@ -1307,7 +1351,7 @@ class SubmergeFolderOpenRowCommand(sublime_plugin.TextCommand):
         begin_comparison(window, [Source(path=p) for p in existing[:MAX_PANES]])
 
     def is_enabled(self):
-        return bool(self.view.settings().get("submerge_folder_view"))
+        return folders.is_folder_view(self.view)
 
     def is_visible(self):
         return self.is_enabled()
@@ -1332,16 +1376,16 @@ class SubmergeFolderToggleIdenticalCommand(sublime_plugin.WindowCommand):
     """Show/hide identical files in a folder comparison result."""
 
     def run(self, group=-1, index=-1):
-        settings = sm.settings()
-        settings.set("folder_show_identical",
-                     not settings.get("folder_show_identical", True))
-        sublime.save_settings(sm.SETTINGS_FILE)
+        store = settings()
+        store.set("folder_show_identical",
+                  not store.get("folder_show_identical", True))
+        sublime.save_settings(SETTINGS_FILE)
         view = _folder_view(self.window, group, index)
         if view is not None:
             folders.rescan(view)
 
     def is_checked(self, group=-1, index=-1):
-        return bool(sm.setting("folder_show_identical", True))
+        return bool(setting("folder_show_identical", True))
 
     def is_enabled(self, group=-1, index=-1):
         return _folder_view(self.window, group, index) is not None
@@ -1358,9 +1402,9 @@ class SubmergeListener(sublime_plugin.EventListener):
 
     def on_query_context(self, view, key, operator, operand, match_all):
         if key == "submerge_active":
-            value = sm.session_for_view(view) is not None
+            value = sessions.session_for_view(view) is not None
         elif key == "submerge_folder_view":
-            value = bool(view.settings().get("submerge_folder_view"))
+            value = folders.is_folder_view(view)
         elif key == "submerge_has_marked":
             value = bool(_marked_summary())
         else:
@@ -1372,36 +1416,39 @@ class SubmergeListener(sublime_plugin.EventListener):
         return None
 
     def on_modified_async(self, view):
-        session = sm.session_for_view(view)
-        if session is None or not sm.setting("live_diff", True):
+        session = sessions.session_for_view(view)
+        if session is None or not setting("live_diff", True):
             return
         global _pending_refresh
         _pending_refresh += 1
         token = _pending_refresh
-        delay = int(sm.setting("live_diff_delay_ms", 400) or 400)
+        delay = int(setting("live_diff_delay_ms", 400) or 400)
 
         def maybe_refresh():
+            # Only the newest keystroke in a burst gets to re-diff, and the
+            # diff itself runs off the UI thread - on a large file it takes
+            # long enough to be felt as the editor stalling.
             if token == _pending_refresh and session.is_alive():
-                session.refresh()
+                session.refresh_async()
 
         sublime.set_timeout(maybe_refresh, delay)
 
     def on_post_save_async(self, view):
-        session = sm.session_for_view(view)
+        session = sessions.session_for_view(view)
         if session:
             session.refresh()
 
     def on_close(self, view):
         folders.forget(view.id())
-        session = sm.session_for_view(view)
+        session = sessions.session_for_view(view)
         if session and not session.is_alive():
-            sm.end_session(
+            sessions.end_session(
                 session.window,
-                restore_layout=bool(sm.setting("restore_layout_on_close", True)))
+                restore_layout=bool(setting("restore_layout_on_close", True)))
 
     def on_text_command(self, view, command_name, args):
         if command_name == "drag_select" and (args or {}).get("by") == "words":
-            if view.settings().get("submerge_folder_view"):
+            if folders.is_folder_view(view):
                 # double click inside a folder result opens the comparison
                 sublime.set_timeout(
                     lambda: view.run_command("submerge_folder_open_row"), 30)

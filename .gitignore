@@ -6,8 +6,9 @@ __pycache__/
 .DS_Store
 
 # Build output — the packaged .sublime-package is a release artifact,
-# not source; rebuild it from the source files instead of tracking it.
+# not source; rebuild it with tools/build_package.py instead of tracking it.
 *.sublime-package
+dist/
 
 # Editor/OS cruft
 *.swp

@@ -1,0 +1,15 @@
+# The comparison fixtures encode exact bytes - CRLF vs LF, BOMs, a missing
+# final newline - and are the input to tests that assert on precisely those
+# bytes.  Git must not normalize them in either direction, or the line-ending
+# and encoding tests fail on any checkout with core.autocrlf=true (the Git for
+# Windows default, and what the Windows CI runner uses).
+test/SubMerge-Test-Data/** -text
+
+# Keep the plugin's own sources LF in the repository regardless of platform.
+*.py text eol=lf
+*.sublime-settings text eol=lf
+*.sublime-menu text eol=lf
+*.sublime-keymap text eol=lf
+*.sublime-syntax text eol=lf
+*.md text eol=lf
+*.yml text eol=lf

@@ -18,14 +18,22 @@ line in that pane, or None, which means "this pane has nothing here" (a gap).
 
 import difflib
 import re
+from collections import deque
 
 # Bumped whenever the public API of this module changes.  SubMerge.py checks
 # it at load time to catch the "Sublime is still running the old sub-module"
 # situation that happens when the package is overwritten in place.
-VERSION = 2
+VERSION = 3
 
 EQUAL = "equal"
 CHANGED = "changed"
+
+# Panes are labelled A/B/C everywhere they are shown to the user - in status
+# messages, folder-comparison presence columns and metadata report headers.
+# The label set is what caps the number of panes, so the two live together:
+# supporting a fourth pane means adding a letter here and nothing else.
+PANE_LETTERS = "ABC"
+MAX_PANES = len(PANE_LETTERS)
 
 _WORD_RE = re.compile(r"\w+|[ \t]+|[^\w \t]")
 
@@ -162,7 +170,8 @@ class Alignment(object):
 
     def _build(self):
         opts = self.options
-        keys = [[opts.key(l) for l in lines] for lines in self.pane_lines]
+        keys = [[opts.key(line) for line in lines]
+                for lines in self.pane_lines]
         base_keys = keys[0]
         base_len = len(base_keys)
 
@@ -284,7 +293,7 @@ class Alignment(object):
                     key = keys[right][line].strip()
                     if len(key) < min_length:
                         continue
-                    buckets.setdefault(key, []).append(line)
+                    buckets.setdefault(key, deque()).append(line)
 
                 for line in unmatched[left]:
                     if line in self.moved[left]:
@@ -295,12 +304,17 @@ class Alignment(object):
                     candidates = buckets.get(key)
                     if not candidates:
                         continue
+                    # Consume candidates rather than re-scanning past the ones
+                    # already paired: a line can only be moved once, so a used
+                    # candidate is never a match again, and rescanning makes
+                    # this quadratic in the number of identical unmatched
+                    # lines sharing a key.
                     partner = None
-                    for candidate in candidates:
-                        if candidate in self.moved[right]:
-                            continue
-                        partner = candidate
-                        break
+                    while candidates:
+                        candidate = candidates.popleft()
+                        if candidate not in self.moved[right]:
+                            partner = candidate
+                            break
                     if partner is None:
                         continue
                     self.moved[left][line] = (right, partner)
@@ -341,15 +355,6 @@ class Alignment(object):
             if i is not None:
                 return i
         return None
-
-    def changed_lines(self, pane):
-        out = []
-        for r, kind in enumerate(self.row_kind):
-            if kind == CHANGED:
-                i = self.rows[r][pane]
-                if i is not None:
-                    out.append(i)
-        return out
 
     def hunk_is_moved_only(self, hunk):
         """True when every differing line in the hunk was matched elsewhere."""
