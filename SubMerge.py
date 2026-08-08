@@ -8,8 +8,9 @@ CSV/TSV rendering in submerge_table.py.
 """
 
 import os
-import pathlib
 import tempfile
+import urllib.parse
+import urllib.request
 import webbrowser
 
 import sublime
@@ -1286,10 +1287,16 @@ class SubmergeOpenUserGuideCommand(sublime_plugin.WindowCommand):
             path = os.path.join(tempfile.gettempdir(), GUIDE_FILENAME)
             with open(path, "w", encoding="utf-8") as handle:
                 handle.write(page)
-            # Path.as_uri() rather than "file://" + path: on Windows the
-            # latter produces file://C:\... , where the drive letter parses as
-            # a hostname and the backslashes are not separators.
-            webbrowser.open(pathlib.Path(path).as_uri())
+            # pathname2url rather than "file://" + path: on Windows the
+            # latter produces file://C:\... , where the drive letter parses
+            # as a hostname and the backslashes are not separators.  This
+            # spelling (rather than pathlib.Path.as_uri()) keeps the module
+            # importable on Sublime's legacy 3.3 plugin host, so a package
+            # built without .python-version degrades instead of failing to
+            # load every command.
+            url = urllib.parse.urljoin(
+                "file:", urllib.request.pathname2url(path))
+            webbrowser.open(url)
             sublime.status_message("SubMerge: user guide opened in your browser")
         except Exception as exc:
             sublime.error_message(

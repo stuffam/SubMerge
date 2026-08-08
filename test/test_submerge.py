@@ -725,6 +725,65 @@ class TestBuildPackage(unittest.TestCase):
         # README.md is loaded via sublime.load_resource() by the user guide.
         self.assertIn("README.md", names)
 
+    # Files at the repo root that deliberately do not ship.  Anything at the
+    # root must be in this set or in INCLUDE_FILES; a file in neither fails
+    # the test below.  That is the check that should have caught
+    # .python-version going missing, and did not exist when it did.
+    NOT_SHIPPED = {
+        ".gitignore", ".gitattributes", ".DS_Store", "TODO.txt",
+        "CONTRIBUTING.md", "setup.cfg",
+        "SubMerge.sublime-project", "SubMerge.sublime-workspace",
+    }
+
+    def test_every_root_file_is_shipped_or_explicitly_excluded(self):
+        root = {name for name in os.listdir(REPO)
+                if os.path.isfile(os.path.join(REPO, name))}
+        undecided = root - set(build_package.INCLUDE_FILES) - self.NOT_SHIPPED
+        self.assertEqual(
+            undecided, set(),
+            "root file(s) in neither the package manifest nor the "
+            "not-shipped list - decide which, do not leave it implicit")
+
+    def test_plugin_host_is_declared_and_shipped(self):
+        # A package without .python-version loads on Sublime's legacy 3.3
+        # host, where this plugin cannot import - and a plugin that fails to
+        # import registers no commands, so every menu entry silently vanishes.
+        build_package.check_plugin_host()
+        names = [archive for _path, archive in build_package.collect()]
+        self.assertIn(".python-version", names)
+        with open(os.path.join(REPO, ".python-version")) as handle:
+            self.assertEqual(handle.read().strip(),
+                             build_package.EXPECTED_PYTHON)
+
+    def test_plugin_imports_nothing_missing_from_the_declared_host(self):
+        # Modules added after Python 3.3. Importing one of these at module
+        # level is only safe because .python-version selects the 3.8 host, so
+        # if that file is ever dropped again this documents the blast radius.
+        import ast
+        too_new = {"pathlib": "3.4", "typing": "3.5", "secrets": "3.6",
+                   "dataclasses": "3.7", "importlib.resources": "3.7",
+                   "zoneinfo": "3.9", "graphlib": "3.9"}
+        sources = [os.path.join(REPO, "SubMerge.py")]
+        sources += [os.path.join(REPO, "modules", n)
+                    for n in os.listdir(os.path.join(REPO, "modules"))
+                    if n.endswith(".py")]
+        for path in sources:
+            with open(path, encoding="utf-8") as handle:
+                tree = ast.parse(handle.read(), path)
+            for node in ast.walk(tree):
+                names = []
+                if isinstance(node, ast.Import):
+                    names = [a.name for a in node.names]
+                elif isinstance(node, ast.ImportFrom) and node.module:
+                    names = [node.module]
+                for name in names:
+                    self.assertNotIn(
+                        name, too_new,
+                        "%s imports %s (needs Python %s); safe only while "
+                        ".python-version selects 3.8"
+                        % (os.path.basename(path), name,
+                           too_new.get(name, "?")))
+
     def test_manifest_ships_nothing_it_should_not(self):
         names = [archive for _path, archive in build_package.collect()]
         for name in names:

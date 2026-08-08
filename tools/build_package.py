@@ -28,6 +28,11 @@ PACKAGE_NAME = "SubMerge.sublime-package"
 
 # Everything the installed plugin needs, relative to the repo root.
 INCLUDE_FILES = [
+    # Selects Sublime's 3.8 plugin host.  Without it the package silently
+    # loads under the legacy Python 3.3 host instead, where the plugin fails
+    # to import at all - and a plugin that fails to import registers no
+    # commands, so every SubMerge menu entry disappears with no other symptom.
+    ".python-version",
     "SubMerge.py",
     "SubMerge.sublime-settings",
     "SubMergeFolder.sublime-syntax",
@@ -52,6 +57,7 @@ INCLUDE_TREES = [
 # Without these the plugin does not work at all, so a build that somehow
 # produced an archive missing one of them is a failed build, not a warning.
 REQUIRED_IN_ARCHIVE = [
+    ".python-version",
     "SubMerge.py",
     "modules/__init__.py",
     "modules/submerge_core.py",
@@ -126,6 +132,32 @@ def check_version(expected):
     print("version %s (SubMerge.py, messages.json and tag agree)" % expected)
 
 
+# Sublime's 3.8 plugin host.  The code uses APIs newer than the 3.3 host
+# provides, so anything else here is a broken package.
+EXPECTED_PYTHON = "3.8"
+
+
+def check_plugin_host():
+    """Fail unless the archive will select the Python 3.8 plugin host.
+
+    This failure mode is invisible from the outside: the package installs,
+    Sublime loads it under python33, the import blows up in the console, and
+    the only user-facing symptom is that every SubMerge menu entry is gone.
+    Worth asserting at build time rather than discovering after a release.
+    """
+    path = os.path.join(REPO, ".python-version")
+    if not os.path.isfile(path):
+        raise SystemExit(
+            "build: .python-version is missing. Sublime would run this "
+            "package on the legacy Python 3.3 host, where it cannot import.")
+    with open(path, encoding="utf-8") as handle:
+        declared = handle.read().strip()
+    if declared != EXPECTED_PYTHON:
+        raise SystemExit(
+            "build: .python-version says %r, expected %r. The plugin uses "
+            "APIs the older host does not have." % (declared, EXPECTED_PYTHON))
+
+
 def collect():
     """Return [(absolute source path, archive name)], sorted."""
     entries = []
@@ -152,6 +184,7 @@ def collect():
 
 
 def build(output_dir):
+    check_plugin_host()
     entries = collect()
     names = [archive for _path, archive in entries]
 
