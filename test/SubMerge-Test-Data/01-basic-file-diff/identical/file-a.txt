@@ -1,0 +1,3 @@
+These two files are byte-for-byte identical.
+SubMerge should detect this before opening any tabs
+and show a dialog instead of a side-by-side comparison.

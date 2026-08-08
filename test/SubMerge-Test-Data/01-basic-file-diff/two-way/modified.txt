@@ -1,0 +1,11 @@
+Configuration Settings
+=======================
+
+server_host = localhost
+server_port = 9090
+debug_mode = true
+max_connections = 100
+retry_attempts = 3
+timeout_seconds = 30
+
+# End of configuration

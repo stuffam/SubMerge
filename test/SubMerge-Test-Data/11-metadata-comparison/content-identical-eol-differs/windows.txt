@@ -1,0 +1,7 @@
+This file has identical TEXT content on both sides,
+but windows.txt uses CRLF and unix.txt uses LF.
+With ignore_line_endings ON, content compares as a match,
+but with 'Compare File Metadata' also on, the line_endings
+field is still worth inspecting in the metadata report
+(it will show as '~', a difference your settings are
+currently choosing to ignore, not a genuine mismatch).

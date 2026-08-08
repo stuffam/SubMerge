@@ -1,0 +1,5 @@
+Encoding Test File
+===================
+
+This file contains accented characters: café, naïve, résumé.
+And a few symbols: © 2026, ° degrees, § section.

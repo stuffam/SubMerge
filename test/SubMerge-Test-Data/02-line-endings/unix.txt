@@ -1,0 +1,15 @@
+Cross-Platform Line Ending Test
+================================
+
+This file exists in three variants:
+windows.txt uses CRLF line endings.
+unix.txt uses LF line endings.
+mixed.txt deliberately mixes both within one file.
+
+With 'Ignore End-of-Line Differences' ON (the default),
+windows.txt and unix.txt should compare as IDENTICAL.
+
+With it OFF, every single line will show as different
+even though the text content is the same.
+
+End of test file.

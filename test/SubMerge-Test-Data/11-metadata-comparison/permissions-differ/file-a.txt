@@ -1,0 +1,6 @@
+This file's content is identical on both sides.
+Only the file permissions differ: file-a.txt is a normal
+read/write file, file-b.txt has been made read-only.
+With "Compare File Metadata" on, this should open a metadata
+report instead of a side-by-side comparison, showing the
+permissions field marked as differing.

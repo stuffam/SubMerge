@@ -1,0 +1,11 @@
+The Quick Reference Guide
+==========================
+
+Step 1: Launch the application.
+Step 2: Click the File menu.
+Step 3: Select New Document.
+Step 3a: Choose a template if desired.
+Step 4: Enter your text.
+Step 5: Save your work.
+
+Notes: Always save frequently.

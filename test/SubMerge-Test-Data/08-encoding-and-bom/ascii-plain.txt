@@ -1,0 +1,5 @@
+Encoding Test File
+===================
+
+This file contains accented characters: cafe, naive, resume.
+And a few symbols: (c) 2026, deg degrees, sect section.

@@ -12,3 +12,4 @@ __pycache__/
 # Editor/OS cruft
 *.swp
 Thumbs.db
+*.sublime-workspace

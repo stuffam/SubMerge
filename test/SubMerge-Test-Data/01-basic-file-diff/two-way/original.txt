@@ -1,0 +1,10 @@
+Configuration Settings
+=======================
+
+server_host = localhost
+server_port = 8080
+debug_mode = false
+max_connections = 100
+timeout_seconds = 30
+
+# End of configuration

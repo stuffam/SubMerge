@@ -1,0 +1,4 @@
+status = "inactive"
+count = 27
+qwertyuiop []{}<>?/
+name = "widget"

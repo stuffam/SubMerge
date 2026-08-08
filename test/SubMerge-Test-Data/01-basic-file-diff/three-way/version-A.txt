@@ -1,0 +1,10 @@
+The Quick Reference Guide
+==========================
+
+Step 1: Open the application.
+Step 2: Click the File menu.
+Step 3: Select New Document.
+Step 4: Enter your text.
+Step 5: Save your work.
+
+Notes: Always save frequently.

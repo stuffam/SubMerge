@@ -1,0 +1,3 @@
+The quick brown fox jumps over the lazy dog.
+This sentence remains exactly the same throughout the entire test file.
+Configuration value set to 42 for this particular test run.

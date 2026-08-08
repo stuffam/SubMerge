@@ -1,0 +1,26 @@
+import os
+import sys
+import json
+
+def load_config(path):
+    with open(path) as handle:
+        return json.load(handle)
+
+def save_config(path, data):
+    with open(path, "w") as handle:
+        json.dump(data, handle, indent=2)
+
+def validate_config(data):
+    required_keys = ["host", "port", "timeout"]
+    for key in required_keys:
+        if key not in data:
+            raise ValueError("missing required config key: " + key)
+    return True
+
+def main():
+    config = load_config("settings.json")
+    validate_config(config)
+    print("configuration loaded successfully")
+
+if __name__ == "__main__":
+    main()

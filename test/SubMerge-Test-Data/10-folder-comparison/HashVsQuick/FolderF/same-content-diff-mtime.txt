@@ -1,0 +1,3 @@
+This content is byte-for-byte identical in both folders.
+Only the file's modified timestamp will differ.
+"content" mode should say these match; "size_and_time" should not.

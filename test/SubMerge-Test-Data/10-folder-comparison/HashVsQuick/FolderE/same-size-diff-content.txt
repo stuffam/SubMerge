@@ -1,0 +1,2 @@
+AAAA-alpha-BBBB-bravo-CCCC-charlie line one
+second line stays fixed length here!
