@@ -85,6 +85,17 @@ def plugin_version():
     return match.group(1)
 
 
+def base_version(tag):
+    """Strip a leading "v" and any prerelease or build suffix.
+
+    v1.1.0-rc1 is a release candidate *of* 1.1.0: the suffix describes the
+    release, not the plugin, so PLUGIN_VERSION still reads 1.1.0 and
+    messages.json still keys on 1.1.0.  Comparing the whole tag would reject
+    every prerelease the release job is built to publish.
+    """
+    return re.split(r"[-+]", tag.lstrip("vV"), maxsplit=1)[0]
+
+
 def check_version(expected):
     """Fail unless the release tag, PLUGIN_VERSION and messages.json agree.
 
@@ -94,7 +105,7 @@ def check_version(expected):
     upgrade note at all.  A release is the last place that can still be
     caught cheaply.
     """
-    expected = expected.lstrip("vV")
+    expected = base_version(expected)
     found = plugin_version()
     if found != expected:
         raise SystemExit(

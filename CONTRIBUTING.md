@@ -77,9 +77,13 @@ them — so the build refuses to run on a tag unless all three agree:
 python3 tools/build_package.py --expect-version v1.1.0
 ```
 
-Run that before tagging to check locally. A tag containing a hyphen
-(`v1.1.0-rc1`) is published as a prerelease. Re-running a tag build refreshes
-the attached asset instead of failing.
+Run that before tagging to check locally. Re-running a tag build refreshes the
+attached asset instead of failing.
+
+A tag containing a hyphen (`v1.1.0-rc1`) is published as a prerelease. The
+suffix describes the release, not the plugin, so `PLUGIN_VERSION` and
+`messages.json` still read `1.1.0` — the check compares against the base
+version.
 
 ## Module versions
 

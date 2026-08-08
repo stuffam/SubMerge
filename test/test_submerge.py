@@ -679,5 +679,73 @@ class TestSessionHelpers(unittest.TestCase):
         self.assertEqual(sessions._highlight_style(), "squiggly")
 
 
+# ---------------------------------------------------------------------------
+# release packaging
+# ---------------------------------------------------------------------------
+
+sys.path.insert(0, os.path.join(REPO, "tools"))
+import build_package                                # noqa: E402
+
+
+class TestBuildPackage(unittest.TestCase):
+
+    def test_plugin_version_is_readable_without_importing(self):
+        # SubMerge.py imports sublime, so this has to be parsed, not imported.
+        version = build_package.plugin_version()
+        self.assertRegex(version, r"^\d+\.\d+\.\d+$")
+
+    def test_base_version_strips_v_and_suffixes(self):
+        for tag, expected in (("v1.0.0", "1.0.0"),
+                              ("1.0.0", "1.0.0"),
+                              ("V2.3.4", "2.3.4"),
+                              # A release candidate *of* 1.1.0: the suffix
+                              # describes the release, not the plugin.
+                              ("v1.1.0-rc1", "1.1.0"),
+                              ("v1.1.0-beta.2", "1.1.0"),
+                              ("v1.1.0+build7", "1.1.0")):
+            self.assertEqual(build_package.base_version(tag), expected, tag)
+
+    def test_matching_version_passes(self):
+        build_package.check_version("v" + build_package.plugin_version())
+
+    def test_prerelease_tag_is_accepted(self):
+        # The release job publishes hyphenated tags as prereleases, so the
+        # version gate has to let them through or that path is unreachable.
+        build_package.check_version("v%s-rc1" % build_package.plugin_version())
+
+    def test_mismatched_tag_is_rejected(self):
+        with self.assertRaises(SystemExit) as caught:
+            build_package.check_version("v99.98.97")
+        self.assertIn("PLUGIN_VERSION", str(caught.exception))
+
+    def test_manifest_covers_everything_loaded_at_runtime(self):
+        names = [archive for _path, archive in build_package.collect()]
+        for required in build_package.REQUIRED_IN_ARCHIVE:
+            self.assertIn(required, names)
+        # README.md is loaded via sublime.load_resource() by the user guide.
+        self.assertIn("README.md", names)
+
+    def test_manifest_ships_nothing_it_should_not(self):
+        names = [archive for _path, archive in build_package.collect()]
+        for name in names:
+            self.assertFalse(name.endswith(build_package.FORBIDDEN_SUFFIXES),
+                             name)
+            self.assertFalse(name.startswith(("test/", "tools/", ".git")), name)
+
+    def test_build_is_deterministic(self):
+        import hashlib
+        import shutil
+        import tempfile
+        out = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, out, ignore_errors=True)
+
+        def digest():
+            path = build_package.build(out)
+            with open(path, "rb") as handle:
+                return hashlib.sha256(handle.read()).hexdigest()
+
+        self.assertEqual(digest(), digest())
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
