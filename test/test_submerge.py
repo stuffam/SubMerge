@@ -559,7 +559,23 @@ class TestFolders(unittest.TestCase):
 
     # -- regressions --------------------------------------------------------
 
-    def test_symlink_loop_terminates(self):
+    def _dir_symlink(self, path, target):
+        """Create a directory symlink, or skip the test if we cannot.
+
+        target_is_directory is not optional on Windows: without it os.symlink
+        makes a *file* symlink, which os.path.isdir() then reports as False,
+        so no loop forms and the test would silently assert against a
+        different scenario than the one it is named for.  Creating one also
+        needs Developer Mode or elevation, hence the skip.
+        """
+        try:
+            os.symlink(target, path, target_is_directory=True)
+        except (OSError, NotImplementedError, AttributeError):
+            self.skipTest("directory symlinks unavailable on this platform")
+        if not os.path.isdir(path):
+            self.skipTest("directory symlinks not resolvable on this platform")
+
+    def _looping_roots(self, target, filename=None):
         import shutil
         import tempfile
         base = tempfile.mkdtemp()
@@ -568,14 +584,15 @@ class TestFolders(unittest.TestCase):
         for name in ("A", "B"):
             root = os.path.join(base, name)
             os.makedirs(os.path.join(root, "sub"))
-            with open(os.path.join(root, "sub", "f.txt"), "w") as handle:
-                handle.write("hi\n")
-            try:
-                os.symlink("../..", os.path.join(root, "sub", "loop"))
-            except (OSError, NotImplementedError):
-                self.skipTest("symlinks unavailable on this platform")
+            if filename:
+                with open(os.path.join(root, "sub", filename), "w") as handle:
+                    handle.write("hi\n")
+            self._dir_symlink(os.path.join(root, "sub", "loop"), target)
             roots.append(root)
+        return roots
 
+    def test_symlink_loop_terminates(self):
+        roots = self._looping_roots("../..", filename="f.txt")
         # Before the loop guard this recursed until the interpreter's stack
         # limit and the scan never returned.
         root, summary, options = self.scan(roots)
@@ -584,20 +601,9 @@ class TestFolders(unittest.TestCase):
         self.assertIn("symlink, not followed", text)
 
     def test_symlink_loop_terminates_even_when_following(self):
-        import shutil
-        import tempfile
-        base = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, base, ignore_errors=True)
-        roots = []
-        for name in ("A", "B"):
-            root = os.path.join(base, name)
-            os.makedirs(os.path.join(root, "sub"))
-            try:
-                os.symlink("..", os.path.join(root, "sub", "up"))
-            except (OSError, NotImplementedError):
-                self.skipTest("symlinks unavailable on this platform")
-            roots.append(root)
+        roots = self._looping_roots("..")
         _root, summary, _ = self.scan(roots, follow_symlinks=True)
+        # The guard, not the "don't follow" default, is what stops this.
         self.assertIsInstance(summary["dirs"], int)
 
     def test_rescan_settings_exclude_cosmetic_options(self):
