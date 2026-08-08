@@ -1,0 +1,101 @@
+SubMerge v1.1.0
+==============
+
+A correctness and speed release. Nothing you already use has moved or
+changed shape.
+
+Remember to quit Sublime Text completely and restart after updating —
+closing the window is not enough.
+
+
+FIXED: THINGS THAT COULD HANG OR FREEZE
+---------------------------------------
+
+  * Comparing folders that contain a symbolic link pointing back at a
+    parent folder no longer walks the same tree forever. Previously the
+    scan never finished and the status bar sat on "scanning folders…"
+    with no way to tell what had happened.
+
+  * Comparing a very short file against a very long one no longer locks
+    up the window. The blank "gap" block that keeps the panes lined up
+    was being drawn one row at a time for every missing line; a gap of a
+    few thousand lines was enough to stall Sublime.
+
+  * A folder scan that fails now tells you why, in a dialog, instead of
+    leaving the status bar on "scanning folders…".
+
+
+FIXED: SMALLER THINGS
+---------------------
+
+  * Setting "csv_delimiter" to anything that isn't a single character no
+    longer aborts the comparison. It now says so in the console and falls
+    back to detecting the delimiter.
+
+  * Tools > SubMerge > User Guide now opens correctly on Windows.
+
+  * Marking a file, then accidentally including a folder, no longer
+    throws away everything you had marked — the error tells you to pick
+    one or the other, and your marks are still there when it does.
+
+  * Synchronized scrolling no longer drifts apart when two panes are at
+    different zoom levels.
+
+  * A file that cannot be read (permissions, for example) is now reported
+    as such in the metadata comparison instead of showing a column of
+    dashes, and two unreadable files are no longer declared identical.
+
+  * A malformed color in your settings file is reported in the console
+    and ignored, instead of rendering strangely.
+
+
+FASTER
+------
+
+  * Folder comparison is substantially quicker. Files whose sizes already
+    prove they differ are no longer read and hashed, and with "Compare
+    File Metadata" turned on each file is now read once rather than
+    twice. On a folder of large files this is the difference between
+    seconds and near-instant.
+
+  * Changing a color preset or highlight style while a folder comparison
+    is open no longer re-scans and re-hashes the entire tree just to
+    repaint it.
+
+  * Live re-diffing while you type no longer stalls the editor on large
+    files — the comparison now happens off the interface thread.
+
+
+CHANGED
+-------
+
+  * A gap taller than 40 lines is now drawn as 40 blank rows followed by
+    a note, for example "4,960 more line(s) not in this pane", rather
+    than thousands of blank rows.
+
+  * Folders that were not explored are now labelled in the results, as
+    "(symlink, not followed)" or "(depth limit)". Previously they were
+    reported as identical, which was not true — they simply had not been
+    looked at.
+
+
+NEW SETTING
+-----------
+
+  "folder_follow_symlinks"  (default: false)
+
+Whether to descend into folders that are symbolic links. Off by default,
+because a link pointing back at a parent makes the same files appear over
+and over. When off, a linked folder still appears in the results but its
+contents are not compared. Loops are detected either way, so turning this
+on cannot hang the scan.
+
+
+ALSO
+----
+
+The user guide's HTML is now generated more carefully — links with an
+unexpected target are rendered as plain text rather than followed.
+
+Internally, the plugin now ships with a test suite and runs it on Windows,
+macOS and Linux before each release.
