@@ -38,6 +38,7 @@ INCLUDE_FILES = [
     "SubMergeFolder.sublime-syntax",
     "SubMergeMetadata.sublime-syntax",
     "Main.sublime-menu",
+    "SubMerge.sublime-commands",
     "Context.sublime-menu",
     "Side Bar.sublime-menu",
     "Tab Context.sublime-menu",
@@ -71,6 +72,7 @@ REQUIRED_IN_ARCHIVE = [
     "modules/submerge_table.py",
     "modules/submerge_docs.py",
     "SubMerge.sublime-settings",
+    "SubMerge.sublime-commands",
     "README.md",
 ]
 

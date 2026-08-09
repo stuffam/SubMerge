@@ -326,6 +326,13 @@ On a Mac, use **Cmd** wherever the table says **Ctrl**.
 
 To change these: **Tools → SubMerge → Key Bindings**.
 
+### If you'd rather not use shortcuts
+
+Every SubMerge command is also on the **Command Palette**. Press
+**Ctrl+Shift+P** (**Cmd+Shift+P** on a Mac) and type `submerge` — the whole
+list appears, from starting a comparison to the comparison options, the color
+presets, settings and this guide. Nothing is shortcut-only.
+
 ---
 
 ## Settings
