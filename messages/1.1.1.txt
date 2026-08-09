@@ -1,0 +1,25 @@
+SubMerge v1.1.1
+===============
+
+A licensing release. No code changed — SubMerge behaves exactly as it did
+in v1.1.0.
+
+
+NOW LICENSED UNDER MIT
+----------------------
+
+SubMerge previously shipped with no license file at all, which under
+copyright law means all rights reserved: strictly speaking, nobody had
+permission to redistribute it or reuse any of it.
+
+That was an oversight, not an intention. The plugin is now released under
+the MIT License — you may use, copy, modify and redistribute it, including
+in commercial work, provided the copyright notice and license text travel
+with it. The software comes with no warranty.
+
+The full terms are in the LICENSE file, which now ships inside the package
+itself, so your installed copy carries them whether or not you ever visit
+the repository.
+
+Nothing you need to do. No settings, menus, shortcuts or behavior have
+changed, and there is no need to restart for this update.

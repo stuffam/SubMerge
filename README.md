@@ -8,9 +8,6 @@ compares whole folders, so you can see at a glance which files match and which
 don't. If you have used WinMerge, Beyond Compare, or the "diff" view in a Git
 tool, this will feel familiar.
 
-This plugin was developed with the assistance of [Claude](https://www.anthropic.com/claude),
-Anthropic's AI assistant.
-
 ---
 
 ## Contents
@@ -418,6 +415,16 @@ Report problems or ask questions wherever you obtained SubMerge. If you're
 reporting a bug, it helps to include your Sublime Text build number
 (**Help → About Sublime Text**), your operating system, and anything shown in
 the console (**View → Show Console**).
+
+---
+
+## License
+
+SubMerge is released under the MIT License — free to use, modify and
+redistribute, including commercially, as long as the copyright notice and
+license text come along. It is provided without warranty of any kind. The full
+terms are in the `LICENSE` file, which ships inside the installed package
+alongside this guide.
 
 ---
 

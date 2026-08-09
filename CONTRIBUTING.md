@@ -51,6 +51,31 @@ archive, and CI asserts that.
 To test a build, drop the file into `Installed Packages/` (Preferences →
 Browse Packages…, then up one level) and restart Sublime Text completely.
 
+## What ships, and the two places that decide it
+
+There are two distribution paths, and they choose contents by opposite rules.
+A file that needs to reach users has to survive both.
+
+- **The GitHub Release asset** is built by `tools/build_package.py` from the
+  allowlist in `INCLUDE_FILES` / `INCLUDE_TREES`. A new runtime file is absent
+  until it is added there.
+- **Package Control** never runs that script. It installs the GitHub archive of
+  the tag, which is `git archive` output and therefore governed by the
+  `export-ignore` denylist in `.gitattributes`. A new runtime file ships
+  automatically; a new *development* directory ships too, unless it is added to
+  that block.
+
+So: adding something the plugin loads means editing `build_package.py`; adding
+a directory of tests, tooling or notes means editing `.gitattributes`. Check
+what Package Control would actually install with:
+
+```bash
+git archive --worktree-attributes --format=tar HEAD | tar -t | sort
+```
+
+That list should match the build script's manifest. Nothing enforces this
+automatically.
+
 ## Cutting a release
 
 A release is published by pushing a `v*` tag, and by nothing else — no branch
