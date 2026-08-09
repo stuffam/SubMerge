@@ -1,0 +1,35 @@
+SubMerge v1.1.2
+===============
+
+Everything SubMerge does is now on the Command Palette.
+
+
+THE COMMAND PALETTE
+-------------------
+
+Press Ctrl+Shift+P (Cmd+Shift+P on macOS) and type "submerge". Every
+command is there — starting a comparison, moving between differences,
+copying changes, the comparison options, the color presets, settings and
+the user guide.
+
+Previously the only ways in were the Tools > SubMerge menu, the
+right-click menus and the keyboard shortcuts. If you drive Sublime mostly
+from the palette, SubMerge was close to invisible.
+
+Nothing has moved. The menus and shortcuts are exactly where they were —
+this is an additional way in, not a replacement.
+
+Every entry is prefixed "SubMerge:", so typing "submerge" brings up the
+whole list and nothing else.
+
+
+ALSO
+----
+
+The two internal commands that rewrite buffer contents stay out of the
+palette, as they always have. The test suite now checks both that every
+palette entry points at a command that actually exists, and that those
+two internal ones are never listed.
+
+No settings, shortcuts or behavior have changed, and there is no need to
+restart for this update.
