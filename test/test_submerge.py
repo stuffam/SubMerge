@@ -785,6 +785,44 @@ class TestBuildPackage(unittest.TestCase):
                         % (os.path.basename(path), name,
                            too_new.get(name, "?")))
 
+    def test_command_palette_entries_all_resolve(self):
+        # A caption whose command name is misspelled is a dead palette entry:
+        # Sublime lists it, the user picks it, and nothing happens - no error
+        # anywhere.  Nothing else in the build compares the two.
+        import re
+        path = os.path.join(REPO, "SubMerge.sublime-commands")
+        with open(path, encoding="utf-8") as handle:
+            source = handle.read()
+        # Sublime accepts // comments in these files; json.loads does not.
+        entries = json.loads("\n".join(
+            line for line in source.split("\n")
+            if not line.lstrip().startswith("//")))
+        self.assertTrue(entries)
+
+        with open(os.path.join(REPO, "SubMerge.py"), encoding="utf-8") as fh:
+            classes = re.findall(r"^class (\w+)Command\(", fh.read(), re.M)
+        registered = {re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
+                      for name in classes}
+
+        for entry in entries:
+            caption = entry["caption"]
+            self.assertIn(entry["command"], registered,
+                          "%r names no command class in SubMerge.py" % caption)
+            # The palette is one flat list shared with every other package,
+            # so the prefix is what makes these findable at all.
+            self.assertTrue(caption.startswith("SubMerge: "), caption)
+
+    def test_internal_commands_stay_out_of_the_palette(self):
+        # These two rewrite buffer contents and hide themselves with
+        # is_visible().  Listing one in the .sublime-commands file would put
+        # it back in front of users, which is the whole thing that guard is
+        # there to prevent.
+        path = os.path.join(REPO, "SubMerge.sublime-commands")
+        with open(path, encoding="utf-8") as handle:
+            source = handle.read()
+        for internal in ("submerge_apply_patch", "submerge_replace_all"):
+            self.assertNotIn(internal, source)
+
     def test_current_version_has_a_release_note(self):
         # Sublime shows messages.json's entry for the new version after an
         # upgrade.  Without one the user gets no note at all, and nothing

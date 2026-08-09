@@ -1,0 +1,245 @@
+[
+    // -----------------------------------------------------------------------
+    // SubMerge - Command Palette entries
+    //
+    // Every caption is prefixed "SubMerge:" so that typing "submerge" in the
+    // palette finds all of them at once.  Captions match the Tools > SubMerge
+    // menu, flattened - the palette has no submenus, so entries that live
+    // under one there carry their group in the caption instead.
+    //
+    // Commands that need a context the palette cannot supply are deliberately
+    // absent: the sidebar commands take a "paths" argument, and the folder
+    // result-row commands act on the row under the cursor.  The two internal
+    // TextCommands hide themselves via is_visible() instead.
+    // -----------------------------------------------------------------------
+
+    // --- Starting a comparison ---------------------------------------------
+    {
+        "caption": "SubMerge: Compare Selected Tabs",
+        "command": "submerge_compare_selected_tabs"
+    },
+    {
+        "caption": "SubMerge: Compare Open Tabs…",
+        "command": "submerge_compare_open_tabs"
+    },
+    {
+        "caption": "SubMerge: Compare Current Tab With File…",
+        "command": "submerge_compare_with_file"
+    },
+    {
+        "caption": "SubMerge: Compare With Marked Tab(s)",
+        "command": "submerge_compare_with_marked"
+    },
+
+    // --- Marking ------------------------------------------------------------
+    {
+        "caption": "SubMerge: Mark Current Tab for Comparison",
+        "command": "submerge_mark_for_compare"
+    },
+    {
+        "caption": "SubMerge: Add Current Tab to Comparison",
+        "command": "submerge_mark_for_compare",
+        "args": {"add": true}
+    },
+    {
+        "caption": "SubMerge: Clear Marks",
+        "command": "submerge_clear_marks"
+    },
+
+    // --- Moving between differences ----------------------------------------
+    {
+        "caption": "SubMerge: Next Difference",
+        "command": "submerge_next_difference"
+    },
+    {
+        "caption": "SubMerge: Previous Difference",
+        "command": "submerge_previous_difference"
+    },
+    {
+        "caption": "SubMerge: First Difference",
+        "command": "submerge_first_difference"
+    },
+    {
+        "caption": "SubMerge: Last Difference",
+        "command": "submerge_last_difference"
+    },
+    {
+        "caption": "SubMerge: Go To Moved Line's Partner",
+        "command": "submerge_goto_moved_partner"
+    },
+
+    // --- Copying changes ----------------------------------------------------
+    {
+        "caption": "SubMerge: Copy Difference to Right",
+        "command": "submerge_copy_difference",
+        "args": {"to": "right"}
+    },
+    {
+        "caption": "SubMerge: Copy Difference to Left",
+        "command": "submerge_copy_difference",
+        "args": {"to": "left"}
+    },
+    {
+        "caption": "SubMerge: Copy Difference To…",
+        "command": "submerge_copy_difference",
+        "args": {"to": "ask"}
+    },
+    {
+        "caption": "SubMerge: Copy All Differences to Right",
+        "command": "submerge_copy_all_differences",
+        "args": {"to": "right"}
+    },
+    {
+        "caption": "SubMerge: Copy All Differences to Left",
+        "command": "submerge_copy_all_differences",
+        "args": {"to": "left"}
+    },
+
+    // --- The comparison session ---------------------------------------------
+    {
+        "caption": "SubMerge: File Metadata Comparison…",
+        "command": "submerge_metadata_report"
+    },
+    {
+        "caption": "SubMerge: Refresh Comparison",
+        "command": "submerge_refresh"
+    },
+    {
+        "caption": "SubMerge: Reload Compared Folders",
+        "command": "submerge_folder_rescan"
+    },
+    {
+        "caption": "SubMerge: Close Comparison",
+        "command": "submerge_end_comparison"
+    },
+
+    // --- What counts as a difference ----------------------------------------
+    {
+        "caption": "SubMerge: Toggle Ignore Leading/Trailing Whitespace",
+        "command": "submerge_toggle_option",
+        "args": {"option": "ignore_whitespace"}
+    },
+    {
+        "caption": "SubMerge: Toggle Ignore All Whitespace",
+        "command": "submerge_toggle_option",
+        "args": {"option": "ignore_all_whitespace"}
+    },
+    {
+        "caption": "SubMerge: Toggle Ignore Case",
+        "command": "submerge_toggle_option",
+        "args": {"option": "ignore_case"}
+    },
+    {
+        "caption": "SubMerge: Toggle Ignore Blank Lines",
+        "command": "submerge_toggle_option",
+        "args": {"option": "ignore_blank_lines"}
+    },
+    {
+        "caption": "SubMerge: Toggle Ignore End-of-Line Differences (CRLF vs LF)",
+        "command": "submerge_toggle_option",
+        "args": {"option": "ignore_line_endings"}
+    },
+    {
+        "caption": "SubMerge: Toggle Detect Moved Lines",
+        "command": "submerge_toggle_option",
+        "args": {"option": "detect_moved_lines"}
+    },
+
+    // --- How the comparison behaves -----------------------------------------
+    {
+        "caption": "SubMerge: Toggle Compare File Metadata",
+        "command": "submerge_toggle_option",
+        "args": {"option": "compare_metadata"}
+    },
+    {
+        "caption": "SubMerge: Toggle Show CSV/TSV Files as Tables",
+        "command": "submerge_toggle_option",
+        "args": {"option": "csv_table_view"}
+    },
+    {
+        "caption": "SubMerge: Toggle Synchronized Scrolling",
+        "command": "submerge_toggle_option",
+        "args": {"option": "sync_scroll"}
+    },
+    {
+        "caption": "SubMerge: Toggle Show Alignment Gaps",
+        "command": "submerge_toggle_option",
+        "args": {"option": "show_gaps"}
+    },
+    {
+        "caption": "SubMerge: Toggle Live Re-Diff While Typing",
+        "command": "submerge_toggle_option",
+        "args": {"option": "live_diff"}
+    },
+    {
+        "caption": "SubMerge: Toggle Open Comparisons in a New Window",
+        "command": "submerge_toggle_option",
+        "args": {"option": "compare_in_new_window"}
+    },
+    {
+        "caption": "SubMerge: Toggle Folder Compare: Show Identical Files",
+        "command": "submerge_toggle_option",
+        "args": {"option": "folder_show_identical"}
+    },
+
+    // --- Highlighting -------------------------------------------------------
+    {
+        "caption": "SubMerge: Color Preset: Vivid (default)",
+        "command": "submerge_set_option",
+        "args": {"option": "color_preset", "value": "vivid"}
+    },
+    {
+        "caption": "SubMerge: Color Preset: Classic",
+        "command": "submerge_set_option",
+        "args": {"option": "color_preset", "value": "classic"}
+    },
+    {
+        "caption": "SubMerge: Color Preset: High Contrast",
+        "command": "submerge_set_option",
+        "args": {"option": "color_preset", "value": "high_contrast"}
+    },
+    {
+        "caption": "SubMerge: Color Preset: Pastel",
+        "command": "submerge_set_option",
+        "args": {"option": "color_preset", "value": "pastel"}
+    },
+    {
+        "caption": "SubMerge: Color Preset: Colorblind Safe",
+        "command": "submerge_set_option",
+        "args": {"option": "color_preset", "value": "colorblind_safe"}
+    },
+    {
+        "caption": "SubMerge: Highlight Style: Background Fill (default)",
+        "command": "submerge_set_option",
+        "args": {"option": "highlight_style", "value": "background"}
+    },
+    {
+        "caption": "SubMerge: Highlight Style: Underline",
+        "command": "submerge_set_option",
+        "args": {"option": "highlight_style", "value": "underline"}
+    },
+    {
+        "caption": "SubMerge: Highlight Style: Squiggly Underline",
+        "command": "submerge_set_option",
+        "args": {"option": "highlight_style", "value": "squiggly"}
+    },
+    {
+        "caption": "SubMerge: Toggle Graduated Inline Highlight Intensity",
+        "command": "submerge_toggle_option",
+        "args": {"option": "graduated_inline_highlight"}
+    },
+
+    // --- Settings and documentation -----------------------------------------
+    {
+        "caption": "SubMerge: Settings",
+        "command": "submerge_open_settings"
+    },
+    {
+        "caption": "SubMerge: Key Bindings",
+        "command": "submerge_open_keymap"
+    },
+    {
+        "caption": "SubMerge: User Guide",
+        "command": "submerge_open_user_guide"
+    }
+]

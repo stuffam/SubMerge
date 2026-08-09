@@ -9,6 +9,7 @@ test/SubMerge-Test-Data/** -text
 *.py text eol=lf
 *.sublime-settings text eol=lf
 *.sublime-menu text eol=lf
+*.sublime-commands text eol=lf
 *.sublime-keymap text eol=lf
 *.sublime-syntax text eol=lf
 *.md text eol=lf
