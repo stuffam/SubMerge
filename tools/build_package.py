@@ -47,6 +47,10 @@ INCLUDE_FILES = [
     "messages.json",
     # Loaded at runtime by SubmergeOpenUserGuideCommand / OpenReadmeCommand.
     "README.md",
+    # The MIT terms require the notice to travel with every copy, and the
+    # .sublime-package is the copy almost every user actually receives - most
+    # never see the repository.
+    "LICENSE",
 ]
 
 INCLUDE_TREES = [
