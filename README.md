@@ -220,8 +220,9 @@ blank line, byte order mark, and detected text encoding.
 A `!` marks something that differs, `=` something that matches, and `~`
 something that differs but is currently being ignored by your settings.
 
-You can open this report any time with **Ctrl+Alt+I** (**Cmd+Alt+I**), or from
-**Tools → SubMerge → File Metadata Comparison…**.
+You can open this report any time from **Tools → SubMerge → File Metadata
+Comparison…**, or from the Command Palette. (There's a suggested shortcut for
+it too — see [Keyboard shortcuts](#keyboard-shortcuts).)
 
 With this option on, folder comparisons also use the `[~]` marker for files
 whose contents match but whose details don't.
@@ -305,33 +306,48 @@ do](#things-submerge-cannot-do).) Presets include **Vivid**, **Classic**,
 
 On a Mac, use **Cmd** wherever the table says **Ctrl**.
 
+These work **inside a comparison or a folder result** — SubMerge doesn't take
+these keys anywhere else, so they stay available to your other packages.
+
 | Action | Shortcut |
 |---|---|
-| Compare the tabs you've selected | Ctrl+Alt+Shift+D |
-| Compare open tabs (pick from a list) | Ctrl+Alt+D |
-| Compare current tab with a file on disk | Ctrl+Alt+O |
-| Mark this tab for comparison | Ctrl+Alt+M |
-| Compare with the marked tab | Ctrl+Alt+Shift+M |
 | **Next difference** | **F7** |
 | **Previous difference** | **Shift+F7** |
 | First / last difference | Ctrl+Alt+Home / Ctrl+Alt+End |
 | Jump to a moved line's other half | Ctrl+Alt+J |
 | **Copy difference right / left** | **Ctrl+Alt+→ / ←** |
 | Copy *all* differences right / left | Ctrl+Alt+Shift+→ / ← |
-| File metadata comparison | Ctrl+Alt+I |
 | Refresh the comparison | Ctrl+Alt+R |
 | Close the comparison | Ctrl+Alt+Shift+W |
+| Compare with the marked tab *(when something is marked)* | Ctrl+Alt+Shift+M |
 | Open selected row (folder results) | Enter |
 | Reload folders (folder results) | F5 |
 
-To change these: **Tools → SubMerge → Key Bindings**.
+### Starting a comparison has no shortcut by default
 
-### If you'd rather not use shortcuts
+The commands that *begin* a comparison can't be limited to "inside a
+comparison" — there isn't one yet — so enabling them would mean claiming those
+key combinations everywhere, in every window, for every file. There are only so
+many combinations to go round, so SubMerge leaves them switched off and ships
+them as suggestions instead.
 
-Every SubMerge command is also on the **Command Palette**. Press
-**Ctrl+Shift+P** (**Cmd+Shift+P** on a Mac) and type `submerge` — the whole
-list appears, from starting a comparison to the comparison options, the color
-presets, settings and this guide. Nothing is shortcut-only.
+To turn them on, open **Tools → SubMerge → Key Bindings** and uncomment the
+ones you want from the left-hand pane, or bind your own:
+
+| Action | Suggested |
+|---|---|
+| Compare open tabs (pick from a list) | Ctrl+Alt+D |
+| Compare the tabs you've selected | Ctrl+Alt+Shift+D |
+| Mark this tab for comparison | Ctrl+Alt+M |
+| Compare current tab with a file on disk | Ctrl+Alt+O |
+| File metadata comparison | Ctrl+Alt+I |
+
+### You don't need shortcuts at all
+
+Every SubMerge command is on the **Command Palette**. Press **Ctrl+Shift+P**
+(**Cmd+Shift+P** on a Mac) and type `submerge` — the whole list appears, from
+starting a comparison to the comparison options, the color presets, settings
+and this guide. Nothing is shortcut-only.
 
 ---
 
