@@ -13,3 +13,29 @@ test/SubMerge-Test-Data/** -text
 *.sublime-syntax text eol=lf
 *.md text eol=lf
 *.yml text eol=lf
+
+# Extensionless, so no pattern above reaches it. It ships inside the package,
+# and the build is asserted to be byte-reproducible - which it would not be if
+# a Windows checkout gave this file CRLF endings.
+LICENSE text eol=lf
+
+# Package Control does not use tools/build_package.py - it installs the GitHub
+# archive of the tag, so its contents are decided here rather than by that
+# script's include list.  GitHub generates that archive with `git archive`,
+# which honours export-ignore, so this block is the only thing keeping the test
+# fixtures, the CI config and the .sublime-project out of what users receive.
+#
+# Anything the plugin loads at runtime must stay OUT of this list - especially
+# .python-version, without which Sublime runs the package on the legacy 3.3
+# host and every SubMerge menu entry silently disappears.
+.gitattributes export-ignore
+.gitignore export-ignore
+.github export-ignore
+.github/** export-ignore
+test export-ignore
+test/** export-ignore
+tools export-ignore
+tools/** export-ignore
+setup.cfg export-ignore
+CONTRIBUTING.md export-ignore
+SubMerge.sublime-project export-ignore
