@@ -1,16 +1,50 @@
 [
     // ---------------------------------------------------------------------
     // SubMerge - default key bindings (macOS)
+    // Linux and Windows bindings live alongside this file.
+    //
+    // Every binding that is active by default is gated on a SubMerge
+    // context, so none of them claim a key outside a SubMerge comparison or
+    // folder result.  There are not enough key combinations to go round, and
+    // a package that takes one globally takes it from every other package.
+    //
+    // The commands that *start* a comparison cannot be gated - there is no
+    // comparison yet to test for - so they ship commented out rather than
+    // claiming five global combinations on everyone's behalf.  Uncomment any
+    // you want, or bind your own.
+    //
+    // Nothing here is required: every command is on the Command Palette.
+    // Press Cmd+Shift+P and type "submerge".
     // ---------------------------------------------------------------------
 
-    { "keys": ["super+alt+d"], "command": "submerge_compare_open_tabs" },
+    // --- Starting a comparison --------------------------------------------
+    // Off by default.  Uncomment to enable, or copy into your own keymap
+    // (Tools > SubMerge > Key Bindings).
+
+    // Start a comparison by picking 2-3 open tabs.
+    // { "keys": ["super+alt+d"], "command": "submerge_compare_open_tabs" },
 
     // Compare the 2-3 tabs selected in the tab bar.
-    { "keys": ["super+alt+shift+d"], "command": "submerge_compare_selected_tabs" },
-    { "keys": ["super+alt+m"], "command": "submerge_mark_for_compare" },
-    { "keys": ["super+alt+shift+m"], "command": "submerge_compare_with_marked" },
-    { "keys": ["super+alt+o"], "command": "submerge_compare_with_file" },
+    // { "keys": ["super+alt+shift+d"], "command": "submerge_compare_selected_tabs" },
 
+    // Mark the current tab for a later comparison.
+    // { "keys": ["super+alt+m"], "command": "submerge_mark_for_compare" },
+
+    // Compare the current tab against a file chosen on disk.
+    // { "keys": ["super+alt+o"], "command": "submerge_compare_with_file" },
+
+    // File metadata comparison for the active comparison / marked tabs.
+    // { "keys": ["super+alt+i"], "command": "submerge_metadata_report" },
+
+    // --- Active by default, and gated --------------------------------------
+
+    // Only claims the key while something is actually marked.
+    {
+        "keys": ["super+alt+shift+m"], "command": "submerge_compare_with_marked",
+        "context": [{ "key": "submerge_has_marked", "operand": true }]
+    },
+
+    // Navigation inside an active comparison.
     {
         "keys": ["f7"], "command": "submerge_next_difference",
         "context": [{ "key": "submerge_active", "operand": true }]
@@ -32,8 +66,8 @@
         "keys": ["super+alt+j"], "command": "submerge_goto_moved_partner",
         "context": [{ "key": "submerge_active", "operand": true }]
     },
-    { "keys": ["super+alt+i"], "command": "submerge_metadata_report" },
 
+    // Merging.
     {
         "keys": ["super+alt+right"], "command": "submerge_copy_difference",
         "args": { "to": "right" },
@@ -55,9 +89,22 @@
         "context": [{ "key": "submerge_active", "operand": true }]
     },
 
-    { "keys": ["super+alt+r"], "command": "submerge_refresh" },
-    { "keys": ["super+alt+shift+w"], "command": "submerge_end_comparison" },
+    // Session control.  Two bindings for refresh because a context list is
+    // ANDed together, and this key serves a comparison or a folder result.
+    {
+        "keys": ["super+alt+r"], "command": "submerge_refresh",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
+    {
+        "keys": ["super+alt+r"], "command": "submerge_refresh",
+        "context": [{ "key": "submerge_folder_view", "operand": true }]
+    },
+    {
+        "keys": ["super+alt+shift+w"], "command": "submerge_end_comparison",
+        "context": [{ "key": "submerge_active", "operand": true }]
+    },
 
+    // Folder comparison results.
     {
         "keys": ["enter"], "command": "submerge_folder_open_row",
         "context": [

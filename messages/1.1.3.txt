@@ -1,0 +1,75 @@
+SubMerge v1.1.3
+===============
+
+Please read this one — five keyboard shortcuts are switched off by
+default now, and you may be using some of them.
+
+
+WHAT CHANGED
+------------
+
+SubMerge used to claim eight key combinations globally: they were bound
+everywhere in Sublime Text, in every window and every file, whether or not
+you were doing a comparison. That is more than a file-comparison tool has
+any business taking, and it silently overrode the same combinations in
+whatever else you have installed.
+
+Now nothing SubMerge binds is global. Every shortcut that is still on by
+default only fires inside a SubMerge comparison or folder result, so
+everywhere else those keys go back to whatever they did before.
+
+
+THE FIVE THAT ARE NOW OFF
+-------------------------
+
+These start a comparison, so they cannot be limited to "inside a
+comparison" — there isn't one yet. Rather than keep them global, they now
+ship as commented-out suggestions:
+
+  Ctrl+Alt+D          Compare open tabs (pick from a list)
+  Ctrl+Alt+Shift+D    Compare the tabs you've selected
+  Ctrl+Alt+M          Mark this tab for comparison
+  Ctrl+Alt+O          Compare current tab with a file on disk
+  Ctrl+Alt+I          File metadata comparison
+
+(Cmd instead of Ctrl on macOS.)
+
+
+TO GET THEM BACK
+----------------
+
+  Tools > SubMerge > Key Bindings
+
+Two panes open. The left-hand pane is SubMerge's default keymap, with
+those five present but commented out. Copy the lines you want into your
+own keymap on the right and remove the leading "//", or bind different
+combinations if these clash with something you use.
+
+
+WHAT IS STILL ON
+----------------
+
+Everything that acts on an open comparison is unchanged and still works
+exactly where it always did:
+
+  F7 / Shift+F7          next / previous difference
+  Ctrl+Alt+Home/End      first / last difference
+  Ctrl+Alt+J             jump to a moved line's other half
+  Ctrl+Alt+Right/Left    copy the difference to the other pane
+  Ctrl+Alt+Shift+ ...    copy all differences
+  Ctrl+Alt+R             refresh
+  Ctrl+Alt+Shift+W       close the comparison
+  Ctrl+Alt+Shift+M       compare with the marked tab
+  Enter / F5             open row / reload, in folder results
+
+
+IF YOU DON'T WANT TO SET UP SHORTCUTS
+-------------------------------------
+
+Since v1.1.2 every SubMerge command is on the Command Palette. Press
+Ctrl+Shift+P (Cmd+Shift+P on macOS) and type "submerge". Nothing in
+SubMerge is reachable only by shortcut.
+
+
+Nothing else has changed. No settings were altered, and there is no need
+to restart for this update.

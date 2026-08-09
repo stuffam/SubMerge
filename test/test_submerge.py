@@ -823,6 +823,56 @@ class TestBuildPackage(unittest.TestCase):
         for internal in ("submerge_apply_patch", "submerge_replace_all"):
             self.assertNotIn(internal, source)
 
+    def _keymaps(self):
+        import glob
+        paths = sorted(glob.glob(os.path.join(REPO, "Default (*).sublime-keymap")))
+        self.assertEqual(len(paths), 3, paths)
+        return paths
+
+    @staticmethod
+    def _bindings(path):
+        with open(path, encoding="utf-8") as handle:
+            source = handle.read()
+        # Sublime accepts // comments in keymaps; json.loads does not.  The
+        # commented-out bindings are meant to be inert, so dropping those
+        # lines is exactly the view Sublime itself takes of this file.
+        return json.loads("\n".join(
+            line for line in source.split("\n")
+            if not line.lstrip().startswith("//")))
+
+    def test_default_keymaps_claim_no_key_globally(self):
+        # A binding with no context claims its combination everywhere, taking
+        # it from every other package the user has installed.  is_enabled()
+        # is not a substitute: it stops the command running but the binding
+        # still swallows the keystroke.  Commands that genuinely cannot be
+        # gated - the ones that start a comparison - ship commented out.
+        for path in self._keymaps():
+            for binding in self._bindings(path):
+                self.assertIn(
+                    "context", binding,
+                    "%s binds %s with no context, so it claims that key "
+                    "outside SubMerge entirely"
+                    % (os.path.basename(path), binding["keys"]))
+
+    def test_keymaps_agree_across_platforms(self):
+        # macOS uses super where Linux and Windows use ctrl; nothing else
+        # should differ.  Drift here is invisible until somebody on one
+        # platform reports a shortcut the docs promise and they do not have.
+        def shape(path):
+            out = []
+            for b in self._bindings(path):
+                keys = [k.replace("super+", "ctrl+") for k in b["keys"]]
+                out.append((tuple(keys), b["command"],
+                            json.dumps(b.get("args"), sort_keys=True),
+                            json.dumps(b.get("context"), sort_keys=True)))
+            return sorted(out)
+
+        shapes = {os.path.basename(p): shape(p) for p in self._keymaps()}
+        reference = sorted(shapes)[0]
+        for name, value in shapes.items():
+            self.assertEqual(value, shapes[reference],
+                             "%s differs from %s" % (name, reference))
+
     def test_current_version_has_a_release_note(self):
         # Sublime shows messages.json's entry for the new version after an
         # upgrade.  Without one the user gets no note at all, and nothing
