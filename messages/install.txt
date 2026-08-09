@@ -1,4 +1,4 @@
-SubMerge v1.1.2
+SubMerge v1.1.3
 ==============
 
 Thanks for installing SubMerge — file and folder comparison inside Sublime
@@ -31,6 +31,9 @@ The fastest way to compare two files that are already open:
 
 Or select two files in the sidebar, right-click, and choose
 "SubMerge: Compare Selected Files". Folders work the same way.
+
+Or press Ctrl+Shift+P (Cmd+Shift+P on macOS) and type "submerge" — every
+SubMerge command is on the Command Palette.
 
 Then:
 
