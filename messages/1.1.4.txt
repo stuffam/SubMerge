@@ -1,0 +1,47 @@
+SubMerge v1.1.4
+===============
+
+Settings and Key Bindings now open the standard Sublime way. Nothing
+about how SubMerge compares files has changed.
+
+
+WHAT CHANGED
+------------
+
+SubMerge opened its settings through a command of its own. It worked, but
+it meant SubMerge sat outside the convention every other package follows,
+and tooling that goes looking for a package's settings the standard way
+could not find them.
+
+Both entries now call Sublime's own "edit_settings", so they behave
+exactly like Preferences > Settings does for any other package.
+
+
+ON THE COMMAND PALETTE
+----------------------
+
+Two entries have been renamed to match the convention:
+
+  was  "SubMerge: Settings"        now  "Preferences: SubMerge Settings"
+  was  "SubMerge: Key Bindings"    now  "Preferences: SubMerge Key Bindings"
+
+They now sort alongside every other package's preferences. Typing
+"submerge" in the palette still finds both, so nothing is harder to reach.
+
+Every other palette entry is unchanged.
+
+
+THE MENUS ARE WHERE THEY WERE
+-----------------------------
+
+  Tools > SubMerge > Settings
+  Tools > SubMerge > Key Bindings
+  Preferences > Package Settings > SubMerge
+
+Same captions, same places. Both still open in split view, with the
+documented defaults on the left and your own overrides on the right.
+
+Your existing settings and key bindings are untouched.
+
+
+No need to restart for this update.

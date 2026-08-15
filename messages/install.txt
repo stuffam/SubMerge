@@ -1,4 +1,4 @@
-SubMerge v1.1.3
+SubMerge v1.1.4
 ==============
 
 Thanks for installing SubMerge — file and folder comparison inside Sublime
