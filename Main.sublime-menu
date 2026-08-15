@@ -272,11 +272,19 @@
                     },
                     {
                         "caption": "Settings",
-                        "command": "submerge_open_settings"
+                        "command": "edit_settings",
+                        "args": {
+                            "base_file": "${packages}/SubMerge/SubMerge.sublime-settings",
+                            "default": "// Settings in here override those in \"SubMerge.sublime-settings\"\n\n{\n\t$0\n}\n"
+                        }
                     },
                     {
                         "caption": "Key Bindings",
-                        "command": "submerge_open_keymap"
+                        "command": "edit_settings",
+                        "args": {
+                            "base_file": "${packages}/SubMerge/Default (${platform}).sublime-keymap",
+                            "default": "[\n\t$0\n]\n"
+                        }
                     }
                 ]
             }
@@ -299,11 +307,19 @@
                         [
                             {
                                 "caption": "Settings",
-                                "command": "submerge_open_settings"
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/SubMerge/SubMerge.sublime-settings",
+                                    "default": "// Settings in here override those in \"SubMerge.sublime-settings\"\n\n{\n\t$0\n}\n"
+                                }
                             },
                             {
                                 "caption": "Key Bindings",
-                                "command": "submerge_open_keymap"
+                                "command": "edit_settings",
+                                "args": {
+                                    "base_file": "${packages}/SubMerge/Default (${platform}).sublime-keymap",
+                                    "default": "[\n\t$0\n]\n"
+                                }
                             },
                             { "caption": "-" },
                             {
