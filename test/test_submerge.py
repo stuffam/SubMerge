@@ -804,13 +804,61 @@ class TestBuildPackage(unittest.TestCase):
         registered = {re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower()
                       for name in classes}
 
+        # Sublime's own commands, listed where a package is expected to call
+        # the built-in rather than wrap it in one of its own.
+        builtin = {"edit_settings"}
+
         for entry in entries:
             caption = entry["caption"]
-            self.assertIn(entry["command"], registered,
-                          "%r names no command class in SubMerge.py" % caption)
-            # The palette is one flat list shared with every other package,
-            # so the prefix is what makes these findable at all.
-            self.assertTrue(caption.startswith("SubMerge: "), caption)
+            if entry["command"] not in builtin:
+                self.assertIn(
+                    entry["command"], registered,
+                    "%r names no command class in SubMerge.py" % caption)
+            # The palette is one flat list shared with every other package, so
+            # the caption is the only thing that makes an entry findable.
+            # Both accepted forms contain "SubMerge", so typing that still
+            # brings up everything.
+            self.assertTrue(
+                caption.startswith("SubMerge: ")
+                or caption.startswith("Preferences: SubMerge "),
+                "%r is not findable by typing 'submerge'" % caption)
+
+    def test_settings_are_reachable_the_conventional_way(self):
+        # st_package_reviewer, which gates submission to Package Control,
+        # looks for a "Preferences: <Package> Settings" palette entry and a
+        # menu Settings entry carrying args.base_file.  Wrapping either in a
+        # package-specific command hides it from that check - and from any
+        # other tooling that goes looking the standard way.
+        import re
+        path = os.path.join(REPO, "SubMerge.sublime-commands")
+        with open(path, encoding="utf-8") as handle:
+            entries = json.loads("\n".join(
+                line for line in handle.read().split("\n")
+                if not line.lstrip().startswith("//")))
+
+        wanted = "Preferences: SubMerge Settings"
+        match = [e for e in entries if e["caption"] == wanted]
+        self.assertEqual(len(match), 1, "no %r palette entry" % wanted)
+        self.assertEqual(match[0]["command"], "edit_settings")
+        self.assertIn("base_file", match[0].get("args", {}))
+
+        with open(os.path.join(REPO, "Main.sublime-menu"),
+                  encoding="utf-8") as handle:
+            menu = json.loads(re.sub(r"^\s*//.*$", "", handle.read(),
+                                     flags=re.M))
+
+        def settings_entries(items):
+            for item in items:
+                if (item.get("caption") == "Settings"
+                        and "base_file" in item.get("args", {})):
+                    yield item
+                for child in item.get("children", []):
+                    yield from settings_entries([child])
+
+        found = list(settings_entries(menu))
+        self.assertTrue(
+            found,
+            "Main.sublime-menu has no Settings entry with args.base_file")
 
     def test_internal_commands_stay_out_of_the_palette(self):
         # These two rewrite buffer contents and hide themselves with

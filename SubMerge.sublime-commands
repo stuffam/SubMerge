@@ -230,13 +230,25 @@
     },
 
     // --- Settings and documentation -----------------------------------------
+    // These two use the "Preferences:" caption convention and call
+    // edit_settings directly, so they sort with every other package's
+    // preferences in the palette and are recognisable to tooling that looks
+    // for them.  Typing "submerge" still finds both.
     {
-        "caption": "SubMerge: Settings",
-        "command": "submerge_open_settings"
+        "caption": "Preferences: SubMerge Settings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/SubMerge/SubMerge.sublime-settings",
+            "default": "// Settings in here override those in \"SubMerge.sublime-settings\"\n\n{\n\t$0\n}\n"
+        }
     },
     {
-        "caption": "SubMerge: Key Bindings",
-        "command": "submerge_open_keymap"
+        "caption": "Preferences: SubMerge Key Bindings",
+        "command": "edit_settings",
+        "args": {
+            "base_file": "${packages}/SubMerge/Default (${platform}).sublime-keymap",
+            "default": "[\n\t$0\n]\n"
+        }
     },
     {
         "caption": "SubMerge: User Guide",

@@ -26,7 +26,7 @@ from .modules.submerge_session import (
     PACKAGE, SETTINGS_FILE, setting, settings)
 from .modules import submerge_table as table
 
-PLUGIN_VERSION = "1.1.3"
+PLUGIN_VERSION = "1.1.4"
 
 # Rewritten in place each time the guide is opened; see the command below.
 GUIDE_FILENAME = "SubMerge-user-guide.html"
