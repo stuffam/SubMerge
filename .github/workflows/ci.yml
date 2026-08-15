@@ -22,11 +22,11 @@ jobs:
       matrix:
         include:
           # Sublime Text 4 bundles Python 3.8, so 3.8 is the version that
-          # actually has to pass.  It is pinned to 22.04 because setup-python
-          # has no 3.8 build for ubuntu-24.04, which is what ubuntu-latest is.
-          - os: ubuntu-22.04
+          # actually has to pass. `linux` is a SELF-HOSTED runner's label,
+          # not a GitHub-hosted image
+          - os: linux
             python-version: "3.8"
-          - os: ubuntu-latest
+          - os: linux
             python-version: "3.12"
           # macOS and Windows cover the platform-specific paths: file:// URL
           # construction, symlink handling and permission bits all differ.
@@ -50,7 +50,7 @@ jobs:
         run: python -m unittest discover -s test -v
 
   lint:
-    runs-on: ubuntu-latest
+    runs-on: linux
     steps:
       - uses: actions/checkout@v5
 
@@ -67,7 +67,7 @@ jobs:
 
   build:
     needs: [test, lint]
-    runs-on: ubuntu-latest
+    runs-on: linux
     steps:
       - uses: actions/checkout@v5
 
@@ -108,7 +108,7 @@ jobs:
     # published because a branch moved.
     if: startsWith(github.ref, 'refs/tags/v')
     needs: [test, lint, build]
-    runs-on: ubuntu-latest
+    runs-on: linux
     permissions:
       # The only job that can write to the repository, and only to cut the
       # release.  Everything else runs with the read-only default above.
