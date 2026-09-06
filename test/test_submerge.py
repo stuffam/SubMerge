@@ -931,6 +931,37 @@ class TestBuildPackage(unittest.TestCase):
         self.assertIn(version, messages)
         self.assertTrue(os.path.isfile(os.path.join(REPO, messages[version])))
 
+    def test_every_release_note_referenced_actually_exists(self):
+        # A messages.json key whose file is missing is only discovered by the
+        # user upgrading into that exact version, at which point Package
+        # Control reports an error instead of the note.  Pruning old notes
+        # makes leaving a dangling entry behind easy, so check them all, not
+        # just the current one.
+        with open(os.path.join(REPO, "messages.json"), encoding="utf-8") as fh:
+            messages = json.load(fh)
+        for version, relative in messages.items():
+            path = os.path.join(REPO, relative)
+            self.assertTrue(os.path.isfile(path),
+                            "messages.json[%r] -> %r is missing"
+                            % (version, relative))
+
+    def test_release_notes_stay_short(self):
+        # Package Control shows every note between the user's version and the
+        # new one, in one dialog they will close without reading if it is a
+        # wall of text.  Keep them to the headline plus a link; the full story
+        # belongs in the GitHub release.
+        with open(os.path.join(REPO, "messages.json"), encoding="utf-8") as fh:
+            messages = json.load(fh)
+        limits = {"install": 45}
+        for version, relative in messages.items():
+            with open(os.path.join(REPO, relative), encoding="utf-8") as fh:
+                lines = fh.read().rstrip("\n").count("\n") + 1
+            limit = limits.get(version, 25)
+            self.assertLessEqual(
+                lines, limit,
+                "%s is %d lines (limit %d) - trim it and link to the release"
+                % (relative, lines, limit))
+
     def test_install_message_version_matches_the_plugin(self):
         # install.txt carries the version in its header and is only updated
         # by hand, so it is exactly the kind of thing that silently goes
