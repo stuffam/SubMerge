@@ -11,20 +11,20 @@ contexts:
     - match: ^SubMerge.*$
       scope: markup.heading.submerge
     - match: ^\s{2}[ABC]:\s.*$
-      scope: comment.line.submerge.root
+      scope: comment.line.root.submerge
     - match: ^\s{2}(?:Content|Metadata):\s*IDENTICAL.*$
-      scope: submerge.folder.identical
+      scope: markup.folder.identical.submerge
     - match: ^\s{2}(?:Content):\s*DIFFERENT.*$
-      scope: submerge.folder.different
+      scope: markup.folder.different.submerge
     - match: ^\s{2}(?:Metadata):\s*DIFFERENT.*$
-      scope: submerge.folder.metadata
+      scope: markup.folder.metadata.submerge
     - match: ^\s{2}!\s.*$
-      scope: submerge.folder.different
+      scope: markup.folder.different.submerge
     - match: ^\s{2}=\s.*$
-      scope: submerge.folder.identical
+      scope: markup.folder.identical.submerge
     - match: ^\s{2}~\s.*$
-      scope: submerge.folder.metadata
+      scope: markup.folder.metadata.submerge
     - match: ^\s{4}-+$
-      scope: comment.line.submerge.rule
+      scope: comment.line.rule.submerge
     - match: ^\s{2}'!'.*$|^\s{2}Name, path.*$|^\s{2}count as.*$
-      scope: comment.line.submerge.note
+      scope: comment.line.note.submerge
