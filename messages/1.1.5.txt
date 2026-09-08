@@ -1,0 +1,9 @@
+SubMerge v1.1.5
+===============
+
+Syntax scope names cleaned up (they now consistently end in
+".submerge"), Compare Open Tabs hides itself when there's nothing to
+compare, and older release notes were pruned. No user-facing behavior
+changed.
+
+Full notes: https://github.com/stuffam/SubMerge/releases/tag/v1.1.5

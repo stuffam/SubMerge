@@ -72,7 +72,7 @@ SCOPE_CURRENT = "region.purplish"
 # color presets
 #
 # These now apply to two things only: the folder-comparison / metadata-report
-# tabs (custom "submerge.folder.*" scopes, confirmed to pick up custom colors
+# tabs (custom "markup.folder.*.submerge" scopes, confirmed to pick up custom colors
 # via the merge described above, since that path is syntax-highlighted text)
 # and the fill color of the artificial gap phantoms (plain inline CSS, no
 # scope involved at all, so it is always reliable regardless of any of this).
@@ -252,17 +252,17 @@ def write_color_scheme(force=False):
     """Generate Packages/User/SubMerge.hidden-color-scheme.
 
     This now covers only the folder-comparison and metadata-report tabs:
-    custom "submerge.folder.*" scopes applied through syntax highlighting,
+    custom "markup.folder.*.submerge" scopes applied through syntax highlighting,
     which Sublime's hidden-color-scheme merge reliably reaches (unlike
     add_regions(), see the scope constants above). Line and inline diff
     highlighting no longer needs this file at all - it uses the built-in
     region.*ish scopes, which already have color in every color scheme."""
     rules = [
-        _folder_rule("submerge.folder.identical", "folder_identical"),
-        _folder_rule("submerge.folder.metadata", "folder_metadata"),
-        _folder_rule("submerge.folder.different", "folder_different"),
-        _folder_rule("submerge.folder.unique", "folder_unique"),
-        _folder_rule("submerge.folder.directory", "folder_directory", bold=True),
+        _folder_rule("markup.folder.identical.submerge", "folder_identical"),
+        _folder_rule("markup.folder.metadata.submerge", "folder_metadata"),
+        _folder_rule("markup.folder.different.submerge", "folder_different"),
+        _folder_rule("markup.folder.unique.submerge", "folder_unique"),
+        _folder_rule("markup.folder.directory.submerge", "folder_directory", bold=True),
     ]
     data = {
         "name": "SubMerge",

@@ -14,44 +14,44 @@ contexts:
     - match: ^SubMerge.*$
       scope: markup.heading.submerge
     - match: ^\s{2}[ABC]:\s.*$
-      scope: comment.line.submerge.root
+      scope: comment.line.root.submerge
     - match: ^\s{2}(?:\[=\] identical|Press Enter|Identical files are hidden).*$
-      scope: comment.line.submerge.legend
+      scope: comment.line.legend.submerge
     - match: ^\s{2}\d+ folder\(s\).*$
-      scope: comment.line.submerge.summary
+      scope: comment.line.summary.submerge
 
     # Directory rows (name ends with a slash)
     - match: ^(\s*)(\[[=~!+]\])(\s+)([A-C-]+)(\s+)(\S.*/)(.*)$
       captures:
-        2: punctuation.definition.submerge.marker
-        4: constant.numeric.submerge.presence
-        6: submerge.folder.directory
-        7: submerge.folder.metadata
+        2: punctuation.definition.marker.submerge
+        4: constant.numeric.presence.submerge
+        6: markup.folder.directory.submerge
+        7: markup.folder.metadata.submerge
 
     # Identical files
     - match: ^(\s*)(\[=\])(\s+)([A-C-]+)(\s+)(.*)$
       captures:
-        2: punctuation.definition.submerge.marker
-        4: constant.numeric.submerge.presence
-        6: submerge.folder.identical
+        2: punctuation.definition.marker.submerge
+        4: constant.numeric.presence.submerge
+        6: markup.folder.identical.submerge
 
     # Content identical, metadata differs
     - match: ^(\s*)(\[~\])(\s+)([A-C-]+)(\s+)(.*)$
       captures:
-        2: punctuation.definition.submerge.marker
-        4: constant.numeric.submerge.presence
-        6: submerge.folder.metadata
+        2: punctuation.definition.marker.submerge
+        4: constant.numeric.presence.submerge
+        6: markup.folder.metadata.submerge
 
     # Files that exist on both/all sides but whose content differs
     - match: ^(\s*)(\[!\])(\s+)([A-C-]+)(\s+)(.*)$
       captures:
-        2: punctuation.definition.submerge.marker
-        4: constant.numeric.submerge.presence
-        6: submerge.folder.different
+        2: punctuation.definition.marker.submerge
+        4: constant.numeric.presence.submerge
+        6: markup.folder.different.submerge
 
     # Files that exist only in some of the folders
     - match: ^(\s*)(\[\+\])(\s+)([A-C-]+)(\s+)(.*)$
       captures:
-        2: punctuation.definition.submerge.marker
-        4: constant.numeric.submerge.presence
-        6: submerge.folder.unique
+        2: punctuation.definition.marker.submerge
+        4: constant.numeric.presence.submerge
+        6: markup.folder.unique.submerge

@@ -26,7 +26,7 @@ from .modules.submerge_session import (
     PACKAGE, SETTINGS_FILE, setting, settings)
 from .modules import submerge_table as table
 
-PLUGIN_VERSION = "1.1.4"
+PLUGIN_VERSION = "1.1.5"
 
 # Rewritten in place each time the guide is opened; see the command below.
 GUIDE_FILENAME = "SubMerge-user-guide.html"
@@ -815,10 +815,19 @@ class SubmergeClearMarksCommand(sublime_plugin.WindowCommand):
 class SubmergeCompareOpenTabsCommand(sublime_plugin.WindowCommand):
     """Pick 2 or 3 open tabs from a quick panel."""
 
+    def _candidates(self):
+        """Tabs this command can actually compare.
+
+        SubMerge's own generated tabs - folder results and metadata reports -
+        are not comparable, so counting raw window.views() would offer the
+        command when picking from it is impossible.
+        """
+        return [v for v in self.window.views()
+                if not folders.is_folder_view(v)
+                and not v.settings().get("submerge_metadata_view")]
+
     def run(self):
-        self.views = [v for v in self.window.views()
-                      if not folders.is_folder_view(v)
-                      and not v.settings().get("submerge_metadata_view")]
+        self.views = self._candidates()
         if len(self.views) < 2:
             sublime.error_message("SubMerge: open at least two tabs first.")
             return
@@ -867,7 +876,10 @@ class SubmergeCompareOpenTabsCommand(sublime_plugin.WindowCommand):
         begin_comparison(self.window, [Source(view=v) for v in views])
 
     def is_enabled(self):
-        return len(self.window.views()) >= 2
+        return len(self._candidates()) >= 2
+
+    def is_visible(self):
+        return self.is_enabled()
 
 
 class SubmergeCompareWithFileCommand(sublime_plugin.WindowCommand):
