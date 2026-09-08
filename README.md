@@ -32,6 +32,24 @@ tool, this will feel familiar.
 
 ## Installing
 
+### Package Control (recommended)
+
+1. Open the Command Palette (**Ctrl+Shift+P**, or **Cmd+Shift+P** on a Mac).
+2. Type **Package Control: Install Package** and press Enter.
+3. Type **SubMerge** and press Enter.
+4. **Quit Sublime Text completely and start it again.** Closing the window is
+   not enough — on a Mac use **Sublime Text → Quit Sublime Text**, on Windows
+   use **File → Exit**.
+
+Don't have Package Control itself yet? Install it first from
+[packagecontrol.io/installation](https://packagecontrol.io/installation), then
+come back to the steps above.
+
+### Manual install
+
+If you'd rather not use Package Control, or you were given the package file
+directly:
+
 1. In Sublime Text, open the **Preferences** menu and choose
    **Browse Packages…**. A folder window opens.
 2. Go **up one level**, into the folder called `Installed Packages`.
@@ -40,12 +58,12 @@ tool, this will feel familiar.
    not enough — on a Mac use **Sublime Text → Quit Sublime Text**, on Windows
    use **File → Exit**.
 
-That's it. You'll find SubMerge under the **Tools** menu, and this guide at
-**Tools → SubMerge → User Guide** (it opens in your web browser).
-
 > **If you were given a plain folder instead of a `.sublime-package` file:**
 > put the whole `SubMerge` folder inside the `Packages` folder from step 1
 > instead, then restart.
+
+Either way, that's it. You'll find SubMerge under the **Tools** menu, and this
+guide at **Tools → SubMerge → User Guide** (it opens in your web browser).
 
 ---
 
