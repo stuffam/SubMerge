@@ -1,4 +1,4 @@
-SubMerge v1.1.5
+SubMerge v1.1.6
 ==============
 
 File and folder comparison inside Sublime Text, in the spirit of WinMerge.
